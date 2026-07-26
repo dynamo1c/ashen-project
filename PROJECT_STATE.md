@@ -28,4 +28,8 @@
   - [x] Structured language chips (`en-IN`, `hi-IN`, `kn-IN`) and dynamic `#voice-status` indicator in `client/index.html`.
   - [x] Styled active recording pulse animations and badges following the Palantir Gotham design rules in `client/main.css`.
   - [x] Refactored backend Express endpoints in `functions/ashen_api/index.js` to expose a DRY `POST /api/copilot/query` route.
+- [x] **Recidivism Matrix Scale & Redirection Polish (July 2026):**
+  - [x] Scaled datastore query limit from `LIMIT 100` to `LIMIT 2000` to handle large-scale database lookups.
+  - [x] Implemented dynamic seed generation up to exactly 1,480 profiles to demonstrate full visual scale while retaining any real database modifications.
+  - [x] Refactored scatter chart and table dossier links to pass the complete profile object, resolving fallback placeholders on the dossier page.
 

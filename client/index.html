@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <!-- Google Identity Services SDK disabled — OAuth not in use -->
 </head>
 <body>
   <div class="app-shell">
@@ -38,9 +38,16 @@
           <a class="nav-item" data-section="alerts" aria-label="Alerts">
             <i class="ti ti-bell"></i> Alerts
           </a>
+          <a class="nav-item" data-section="recidivism" aria-label="Recidivism Matrix">
+            <i class="ti ti-chart-bubble"></i> Recidivism
+          </a>
           <a class="nav-item" data-section="inject" aria-label="Inject FIR">
             <i class="ti ti-plus"></i> Inject FIR
           </a>
+          <a class="nav-item" data-section="syndicates" aria-label="Syndicates Dossier">
+            <i class="ti ti-users"></i> Syndicates
+          </a>
+
         </nav>
         <span class="sidebar-section-label">Filters</span>
         <div class="sidebar-filter-group">
@@ -172,8 +179,8 @@
             <div class="network-toolbar-row">
               <span class="toolbar-label">ASSOCIATION DEPTH:</span>
               <div class="hop-btns-container">
-                <button class="hop-btn" data-depth="1" title="1st Hop: Direct Incident Co-offenders">1st Hop (Direct)</button>
-                <button class="hop-btn active" data-depth="2" title="2nd Hop: Secondary Co-offending Connections">2nd Hop (Cross-Case)</button>
+                <button class="hop-btn active" data-depth="1" title="1st Hop: Direct Incident Co-offenders">1st Hop (Direct)</button>
+                <button class="hop-btn" data-depth="2" title="2nd Hop: Secondary Co-offending Connections">2nd Hop (Cross-Case)</button>
                 <button class="hop-btn" data-depth="3" title="3rd Hop: Syndicate Leaders & Cross-District Masterminds">3rd Hop (Syndicate Web)</button>
               </div>
             </div>
@@ -295,6 +302,99 @@
               </div>
             </div>
           </div>
+
+
+
+          <!-- DEMOGRAPHIC & RECIDIVISM PROPENSITY MATRIX PANEL -->
+          <div class="panel recidivism-panel">
+            <div class="panel-header gotham-panel-header">
+              <div class="gotham-title-group">
+                <span class="gotham-status-pulse">● ANALYTICS ENGINE ONLINE</span>
+                <span class="gotham-header-title">KARNATAKA DEMOGRAPHIC & RECIDIVISM PROPENSITY MATRIX</span>
+              </div>
+              <div class="gotham-header-meta">
+                <span class="gotham-meta-badge" id="recidivism-count-badge">65 PROFILES ANALYZED</span>
+              </div>
+            </div>
+
+            <div class="recidivism-content">
+              <!-- Connected 1px Hairline Ledger Summary Grid -->
+              <div class="gotham-telemetry-strip">
+                <div class="gotham-stat-card crimson-border">
+                  <div class="gotham-stat-hdr">YOUTH HIGH-RISK (18-25 MALE)</div>
+                  <div class="gotham-stat-num crimson" id="recid-youth-rate">68.2%</div>
+                  <div class="gotham-stat-sub" id="recid-youth-sub">AVG 4.4 PRIOR OFFENSES</div>
+                </div>
+                <div class="gotham-stat-card amber-border">
+                  <div class="gotham-stat-hdr">ADULT SERIAL (26-35 MALE)</div>
+                  <div class="gotham-stat-num amber" id="recid-adult-rate">51.4%</div>
+                  <div class="gotham-stat-sub" id="recid-adult-sub">AVG 3.1 PRIOR OFFENSES</div>
+                </div>
+                <div class="gotham-stat-card slate-border">
+                  <div class="gotham-stat-hdr">FEMALE REOFFENDER COHORT</div>
+                  <div class="gotham-stat-num" id="recid-female-rate">24.8%</div>
+                  <div class="gotham-stat-sub" id="recid-female-sub">AVG 1.4 PRIOR OFFENSES</div>
+                </div>
+              </div>
+
+              <!-- Tactical Filter Matrix Bar -->
+              <div class="gotham-filter-bar">
+                <span class="gotham-filter-lbl">GENDER MATRIX:</span>
+                <div id="recidivism-gender-chips" style="display:flex;gap:6px;">
+                  <button class="gotham-filter-btn active" data-gender="all">ALL GENDERS</button>
+                  <button class="gotham-filter-btn" data-gender="MALE">MALE</button>
+                  <button class="gotham-filter-btn" data-gender="FEMALE">FEMALE</button>
+                </div>
+                
+                <span class="gotham-filter-lbl" style="margin-left:14px;">CRIME CATEGORY:</span>
+                <div id="recidivism-crime-chips" style="display:flex;gap:6px;">
+                  <button class="gotham-filter-btn active" data-crime="all">ALL CRIMES</button>
+                  <button class="gotham-filter-btn" data-crime="Theft & Robbery">THEFT & ROBBERY</button>
+                  <button class="gotham-filter-btn" data-crime="Cybercrime">CYBERCRIME</button>
+                  <button class="gotham-filter-btn" data-crime="Narcotics">NARCOTICS</button>
+                  <button class="gotham-filter-btn" data-crime="Violent Crime">VIOLENT CRIME</button>
+                </div>
+              </div>
+
+              <!-- Recidivism Scatter Chart Container -->
+              <div class="recidivism-chart-box">
+                <div class="recidivism-chart-header">
+                  <span class="chart-box-title">AGE VS. PRIOR OFFENSE PROPENSITY SCATTER</span>
+                  <span class="chart-box-legend">
+                    <span class="legend-item"><span class="legend-dot crimson"></span> YOUTH HIGH-RISK ZONE</span>
+                    <span class="legend-item"><span class="legend-dot amber"></span> MALE PROFILES</span>
+                    <span class="legend-item"><span class="legend-dot blue"></span> FEMALE PROFILES</span>
+                  </span>
+                </div>
+                <div class="canvas-wrapper">
+                  <canvas id="recidivismScatterChart"></canvas>
+                </div>
+              </div>
+
+              <!-- Cohort Intelligence Table -->
+              <div class="recidivism-table-wrapper">
+                <div class="table-title-strip">COHORT PROFILE INTELLIGENCE LEDGER</div>
+                <table class="recidivism-ledger-table">
+                  <thead>
+                    <tr>
+                      <th>OFFENDER ID</th>
+                      <th>NAME</th>
+                      <th>AGE / GENDER</th>
+                      <th>PRIOR OFFENSES</th>
+                      <th>CRIME HEAD</th>
+                      <th>DISTRICT</th>
+                      <th>RISK SCORE</th>
+                      <th>ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recidivism-table-body">
+                    <!-- Populated by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
 
 
 
@@ -431,6 +531,30 @@
                     <div class="dossier-card-header">REGISTERED SUSPECTS & ACCOMPLICES</div>
                     <div id="cd-suspects-list" class="suspect-card-grid"></div>
                   </div>
+
+                  <!-- Modus Operandi Similarity Matches Section -->
+                  <div class="dossier-card" id="case-mo-similarity-box" style="margin-top:12px;">
+                    <div class="dossier-card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                      <span>AUTOMATED BEHAVIORAL MO SIMILARITY DETECTED</span>
+                      <span style="font-family:'IBM Plex Mono'; font-size:8px; color:var(--safe); border:1px solid var(--safe); padding:2px 5px; border-radius:2px; letter-spacing:0.04em;">TF-IDF ENGINE</span>
+                    </div>
+                    <div class="suspect-cases-wrap" style="max-height:200px; overflow-y:auto;">
+                      <table class="data-table" style="width:100%; font-size:9px;">
+                        <thead>
+                          <tr>
+                            <th>FIR Number</th>
+                            <th>Station / District</th>
+                            <th>Match %</th>
+                            <th>Common MO Signatures</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="case-mo-matches-tbody">
+                          <tr><td colspan="5" style="text-align:center; color:var(--text-3); padding:12px;">No matching behavioral patterns detected.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Right Column: Embedded Criminal Network Graph -->
@@ -451,10 +575,203 @@
             </div>
           </div>
 
+          <!-- DEDICATED FULLSCREEN OFFENDER DOSSIER PANEL (LEVEL 3) -->
+          <div class="panel offender-dossier-panel">
+            <div class="panel-header dossier-header-bar">
+              <div class="dossier-title-group">
+                <i class="ti ti-user-exclamation"></i>
+                <span>OFFENDER INTELLIGENCE DOSSIER · <span id="od-offender-id">OFF-084003</span></span>
+              </div>
+              <div class="dossier-nav-btns">
+                <button class="btn-back" id="btn-back-to-recidivism">← BACK TO RECIDIVISM MATRIX</button>
+              </div>
+            </div>
+
+            <div class="dossier-content-wrap">
+              <div class="dossier-grid">
+                <!-- Left Column: Offender Profile Card & Biometric Summary -->
+                <div class="dossier-left-col">
+                  <div class="dossier-card">
+                    <div class="dossier-card-header">SUBJECT PROFILE & BIOMETRIC METADATA</div>
+                    
+                    <div class="suspect-profile-hero" style="background:#090B10;border:1px solid #1C202E;padding:12px;margin-bottom:12px;">
+                      <div class="suspect-avatar-box" style="width:48px;height:48px;background:#141824;border:1px solid #282E40;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9CA3AF;">
+                        👤
+                      </div>
+                      <div class="suspect-hero-info">
+                        <div class="suspect-hero-name" id="od-hero-name" style="font-size:15px;font-weight:700;color:#E8E8E8;">Karan V 4</div>
+                        <div class="suspect-hero-meta" style="font-size:10px;color:#9CA3AF;margin-top:2px;">
+                          <span>OFFENDER ID: <strong id="od-id-val" style="color:#E8E8E8;">OFF-084003</strong></span> · 
+                          <span>AGE: <strong id="od-age-val" style="color:#E8E8E8;">23</strong></span> · 
+                          <span>GENDER: <strong id="od-gender-val" style="color:#E8E8E8;">MALE</strong></span>
+                        </div>
+                        <div class="suspect-status-row" style="margin-top:6px;display:flex;gap:6px;">
+                          <span class="anom-badge" id="od-risk-badge" style="color:#DC2626;border:1px solid #DC2626;">RISK SCORE: 99.2 (CRITICAL)</span>
+                          <span class="anom-badge" style="color:#D97706;border:1px solid #D97706;">STATUS: ACTIVE MONITORING</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="dossier-meta-grid">
+                      <div class="meta-item">
+                        <span class="meta-label">PRIMARY CRIME HEAD</span>
+                        <span class="meta-val" id="od-crime-head-val">Violent Crime</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">HOME DISTRICT</span>
+                        <span class="meta-val" id="od-district-val">Mangaluru</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">PRIOR CONVICTIONS</span>
+                        <span class="meta-val" id="od-priors-val" style="color:#DC2626;font-weight:bold;">8 Convictions</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">RECIDIVISM LEVEL</span>
+                        <span class="meta-val" id="od-recid-level-val" style="color:#DC2626;font-weight:bold;">CRITICAL REOFFENDER</span>
+                      </div>
+                    </div>
+
+                    <div class="mo-section" style="margin-top:12px;padding-top:12px;border-top:1px solid #1A1E2B;">
+                      <div class="meta-label" style="margin-bottom:4px;">INTELLIGENCE PROFILING SUMMARY</div>
+                      <div class="mo-text" id="od-profiling-text" style="font-family:'IBM Plex Mono';font-size:10px;color:#9CA3AF;line-height:1.5;">
+                        High-frequency repeat offender flagged by Karnataka predictive recidivism engine. Profile exhibits high risk score propensity with multiple cross-district offenses. Subject requires active surveillance and station-level patrol alerts.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Registered Suspect Cases Card -->
+                  <div class="dossier-card" style="margin-top:12px;">
+                    <div class="dossier-card-header">LINKED INCIDENTS & FIR HISTORY</div>
+                    <div class="suspect-cases-wrap" style="max-height:220px;overflow-y:auto;">
+                      <table class="data-table suspect-linked-cases-table" style="width:100%;font-size:9px;">
+                        <thead>
+                          <tr>
+                            <th>FIR Number</th>
+                            <th>District / Station</th>
+                            <th>Category</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="od-linked-tbody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Criminal Network & Syndicate Graph Engine -->
+                <div class="dossier-right-col">
+                  <div class="dossier-card full-height">
+                    <div class="dossier-card-header">
+                      <span>OFFENDER ASSOCIATIONS & MULTI-HOP GRAPH</span>
+                      <span class="graph-legend-inline">
+                        <span class="g-dot fir"></span> FIR
+                        <span class="g-dot suspect"></span> SUSPECT
+                        <span class="g-dot location"></span> LOCATION
+                      </span>
+                    </div>
+                    <div class="dossier-graph-box">
+                      <div id="od-network-graph" style="width:100%;height:380px;"></div>
+                      <div id="od-network-tooltip"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEDICATED FULLSCREEN SYNDICATE DOSSIER PANEL -->
+          <div class="panel syndicate-dossier-panel" style="display: none;">
+            <div class="panel-header dossier-header-bar">
+              <div class="dossier-title-group">
+                <i class="ti ti-users"></i>
+                <span>STATEWIDE ORGANIZED CRIME DOSSIER · <span id="syn-dossier-id">SELECT SYNDICATE</span></span>
+              </div>
+              <div class="dossier-nav-btns" style="display: flex; gap: 8px; align-items: center;">
+                <span class="meta-label" style="margin-right: 4px;">ACTIVE CELL:</span>
+                <select id="syn-selector" style="background: #1C1E24; border: 1px solid #2E3340; border-radius: 4px; color: #C8CDD6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 8px; outline: none; cursor: pointer;">
+                  <!-- Options filled dynamically -->
+                </select>
+              </div>
+            </div>
+
+            <div class="dossier-content-wrap">
+              <div class="dossier-grid">
+                <!-- Left Column: Syndicate Metadata & Member Table -->
+                <div class="dossier-left-col">
+                  <!-- Syndicate Metadata Card -->
+                  <div class="dossier-card">
+                    <div class="dossier-card-header">ORGANIZED SYNDICATE PROFILE & M.O. SIGNATURE</div>
+                    <div class="dossier-meta-grid">
+                      <div class="meta-item">
+                        <span class="meta-label">SYNDICATE CODE</span>
+                        <span class="meta-val" id="syn-code-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">PRIMARY LEADER</span>
+                        <span class="meta-val" id="syn-boss-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">PRIMARY TERRITORY</span>
+                        <span class="meta-val" id="syn-territory-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">ACTIVE CELL MEMBERS</span>
+                        <span class="meta-val" id="syn-size-val">—</span>
+                      </div>
+                    </div>
+                    
+                    <div class="mo-section" style="margin-top:12px;padding-top:12px;border-top:1px solid #1A1E2B;">
+                      <div class="meta-label" style="margin-bottom:4px;">TACTICAL BEHAVIORAL MO PROFILE</div>
+                      <div class="mo-text" id="syn-mo-val" style="font-family:'IBM Plex Mono';font-size:10px;color:#9CA3AF;line-height:1.5;">
+                        Loading behavioral modus operandi signature profiles...
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Member Ledger List Card -->
+                  <div class="dossier-card" style="margin-top:12px;">
+                    <div class="dossier-card-header">SYNDICATE CELL MEMBERS LEDGER & WARRANTS</div>
+                    <div class="suspect-cases-wrap" style="max-height:220px;overflow-y:auto;">
+                      <table class="data-table syndicate-members-table" style="width:100%;font-size:9px;">
+                        <thead>
+                          <tr>
+                            <th>Suspect ID & Name</th>
+                            <th>Aliases</th>
+                            <th>Role in Syndicate</th>
+                            <th>Active Warrants</th>
+                            <th>Bail Status</th>
+                            <th>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody id="syn-members-tbody"></tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Right Column: D3 Syndicate Hierarchy Graph -->
+                <div class="dossier-right-col">
+                  <div class="dossier-card full-height">
+                    <div class="dossier-card-header">
+                      <span>SYNDICATE CELL HIERARCHY MAP</span>
+                      <span class="panel-date">D3.JS GRAPH ENGINE</span>
+                    </div>
+                    <div class="dossier-graph-box">
+                      <div id="syn-hierarchy-graph" style="width:100%;height:380px;"></div>
+                      <div id="syn-hierarchy-tooltip"></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
         </div>
       </main>
     </div>
   </div>
+
 
   <!-- SUSPECT INTELLIGENCE DOSSIER MODAL -->
   <div id="suspect-dossier-modal" class="modal-overlay" role="dialog" aria-label="Suspect Intelligence Dossier">

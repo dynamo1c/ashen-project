@@ -108,6 +108,45 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
 
+  // --- CENTRAL VIEW MANAGEMENT (MUTUALLY EXCLUSIVE FULLSCREEN SCREENS) ---
+  const ALL_VIEW_CLASSES = [
+    'view-dashboard', 'view-map', 'view-network', 'view-alerts', 
+    'view-inject', 'view-station-cases', 'view-recidivism', 
+    'view-case-dossier', 'view-offender-dossier', 'view-syndicates'
+  ];
+
+  const setActiveView = (viewName) => {
+    const appBody = document.querySelector('.app-body');
+    if (!appBody) return;
+
+    // Remove ALL view classes so views NEVER overlap or render side-by-side
+    appBody.classList.remove(...ALL_VIEW_CLASSES);
+    appBody.classList.add(`view-${viewName}`);
+
+    // Hide suspect modal overlay if active
+    const suspectModalEl = document.getElementById('suspect-dossier-modal');
+    if (suspectModalEl) suspectModalEl.classList.remove('active');
+
+    // Scroll main workbench to top
+    const workbench = document.querySelector('.workbench') || document.querySelector('.main-content');
+    if (workbench) workbench.scrollTop = 0;
+
+    // Trigger view-specific data refresh
+    if (viewName === 'recidivism') {
+      loadRecidivismMatrix();
+    } else if (viewName === 'syndicates') {
+      loadSyndicatesList();
+    } else if (viewName === 'network') {
+      setTimeout(() => {
+        if (activeNetworkFir) traceNetwork(activeNetworkFir);
+      }, 100);
+    } else if (viewName === 'map' && map) {
+      map.invalidateSize();
+      setTimeout(() => map.invalidateSize(), 50);
+      setTimeout(() => map.invalidateSize(), 150);
+    }
+  };
+
   // --- SECTION 2: SIDEBAR NAV ---
   navItems.forEach(item => {
     item.addEventListener('click', (e) => {
@@ -116,19 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
       item.classList.add('active');
 
       const section = item.getAttribute('data-section');
-      const appBody = document.querySelector('.app-body');
-      if (appBody) {
-        appBody.classList.remove('view-dashboard', 'view-map', 'view-network', 'view-alerts', 'view-inject');
-        appBody.classList.add(`view-${section}`);
-      }
-
-      // Auto-invalidate map size when switching views to eliminate blank tile regions
-      if (map) {
-        map.invalidateSize();
-        setTimeout(() => map.invalidateSize(), 50);
-        setTimeout(() => map.invalidateSize(), 150);
-        setTimeout(() => map.invalidateSize(), 350);
-      }
+      setActiveView(section);
 
       if ((section === 'alerts' || section === 'dashboard') && trendChartInstance) {
         setTimeout(() => {
@@ -137,6 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   });
+
 
   let crimeChartInstance = null;
 
@@ -317,6 +345,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     window.addEventListener('resize', () => {
       if (map) map.invalidateSize();
+      if (activeNetworkFir && document.querySelector('.app-body').classList.contains('view-network')) {
+        traceNetwork(activeNetworkFir);
+      }
     });
 
     clusterGroup = L.markerClusterGroup({
@@ -686,11 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- LEVEL 3: DEEP CASE DOSSIER PAGE LOGIC ---
   const openCaseDossierPage = async (firNumber) => {
-    const appBody = document.querySelector('.app-body');
-    if (appBody) {
-      appBody.classList.remove('view-dashboard', 'view-map', 'view-network', 'view-alerts', 'view-inject', 'view-station-cases');
-      appBody.classList.add('view-case-dossier');
-    }
+    setActiveView('case-dossier');
 
     const firTitleEl = document.getElementById('cd-fir-number');
     if (firTitleEl) firTitleEl.textContent = firNumber;
@@ -729,6 +756,9 @@ document.addEventListener('DOMContentLoaded', () => {
       moBox.textContent = `Incident registered under FIR ${caseData.fir_number} at ${caseData.police_station} station (${caseData.district}). Offense classification: ${caseData.crime_head}. Primary modus operandi involves forced entry/unauthorized transit recorded at ${caseData.incident_timestamp}.`;
     }
 
+    // Load automated behavioral MO similarity matches
+    loadBehavioralMOMatches(firNumber);
+
     // Fetch suspect profiles & graph network data for this case
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/network/graph?fir_number=${encodeURIComponent(firNumber)}`);
@@ -765,7 +795,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gender: card.getAttribute('data-gender'),
                 base_risk_score: parseFloat(card.getAttribute('data-risk'))
               };
-              openSuspectDossierModal(sData);
+              openSuspectDossierPage(sData);
             });
           });
         }
@@ -789,7 +819,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         suspectListEl.querySelectorAll('.suspect-card').forEach(card => {
           card.addEventListener('click', () => {
-            openSuspectDossierModal({
+            openSuspectDossierPage({
               id: 'OFF-000102',
               label: 'Rajesh Kumar',
               name: 'Rajesh Kumar',
@@ -812,62 +842,96 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const openSuspectDossierModal = (suspectData) => {
-    const modal = document.getElementById('suspect-dossier-modal');
-    if (!modal) return;
-
-    const sName = suspectData.label || suspectData.name || suspectData.id || 'Sudiksha Keer';
-    const sId = suspectData.id || 'OFF-' + Math.floor(100000 + Math.random() * 900000);
-    const sAge = suspectData.age || 29;
+  // --- DEDICATED FULLSCREEN OFFENDER DOSSIER PAGE LOGIC ---
+  const openSuspectDossierPage = (suspectData) => {
+    const sName = suspectData.label || suspectData.name || suspectData.id || 'Offender Profile';
+    const sId = suspectData.id || 'OFF-084003';
+    const sAge = suspectData.age || 28;
     const sGender = suspectData.gender || 'MALE';
-    const sRisk = (suspectData.base_risk_score !== undefined ? suspectData.base_risk_score : 82.5).toFixed(1);
+    const sRisk = (suspectData.base_risk_score !== undefined ? suspectData.base_risk_score : (suspectData.risk_score || 82.5)).toFixed(1);
+    const sCrime = suspectData.crime_head || 'Violent Crime';
+    const sDistrict = suspectData.district || 'Bengaluru Urban';
+    const sPriors = suspectData.prior_offenses !== undefined ? suspectData.prior_offenses : 4;
 
-    const nameEl = document.getElementById('sd-suspect-name');
-    const heroNameEl = document.getElementById('sd-hero-name');
-    const idEl = document.getElementById('sd-suspect-id');
-    const ageEl = document.getElementById('sd-suspect-age');
-    const genderEl = document.getElementById('sd-suspect-gender');
-    const riskBadgeEl = document.getElementById('sd-risk-badge');
-    const linkedTbody = document.getElementById('sd-linked-tbody');
+    const odIdEl = document.getElementById('od-offender-id');
+    const odHeroNameEl = document.getElementById('od-hero-name');
+    const odIdValEl = document.getElementById('od-id-val');
+    const odAgeValEl = document.getElementById('od-age-val');
+    const odGenderValEl = document.getElementById('od-gender-val');
+    const odRiskBadgeEl = document.getElementById('od-risk-badge');
+    const odCrimeValEl = document.getElementById('od-crime-head-val');
+    const odDistrictValEl = document.getElementById('od-district-val');
+    const odPriorsValEl = document.getElementById('od-priors-val');
+    const odRecidLevelEl = document.getElementById('od-recid-level-val');
+    const odLinkedTbody = document.getElementById('od-linked-tbody');
 
-    if (nameEl) nameEl.textContent = sName.toUpperCase();
-    if (heroNameEl) heroNameEl.textContent = sName;
-    if (idEl) idEl.textContent = sId;
-    if (ageEl) ageEl.textContent = sAge;
-    if (genderEl) genderEl.textContent = sGender;
-    if (riskBadgeEl) {
-      riskBadgeEl.textContent = `RISK SCORE: ${sRisk}`;
-      riskBadgeEl.className = `badge ${sRisk >= 70 ? 'high' : sRisk >= 35 ? 'med' : 'low'}`;
+    if (odIdEl) odIdEl.textContent = sId;
+    if (odHeroNameEl) odHeroNameEl.textContent = sName;
+    if (odIdValEl) odIdValEl.textContent = sId;
+    if (odAgeValEl) odAgeValEl.textContent = sAge;
+    if (odGenderValEl) odGenderValEl.textContent = sGender;
+    if (odCrimeValEl) odCrimeValEl.textContent = sCrime;
+    if (odDistrictValEl) odDistrictValEl.textContent = sDistrict;
+    if (odPriorsValEl) odPriorsValEl.textContent = `${sPriors} Convictions`;
+    
+    if (odRiskBadgeEl) {
+      const riskLevel = sRisk >= 75 ? 'CRITICAL' : sRisk >= 45 ? 'HIGH' : 'MEDIUM';
+      const color = sRisk >= 75 ? '#DC2626' : sRisk >= 45 ? '#D97706' : '#2563EB';
+      odRiskBadgeEl.textContent = `RISK SCORE: ${sRisk} (${riskLevel})`;
+      odRiskBadgeEl.style.color = color;
+      odRiskBadgeEl.style.borderColor = color;
+    }
+    if (odRecidLevelEl) {
+      const isCritical = sRisk >= 75;
+      odRecidLevelEl.textContent = isCritical ? 'CRITICAL REOFFENDER' : 'ELEVATED RISK';
+      odRecidLevelEl.style.color = isCritical ? '#DC2626' : '#D97706';
     }
 
-    // Find all linked FIR cases for this suspect
-    const linkedCases = rawHotspots.filter(h => Math.random() > 0.4).slice(0, 5);
-    if (linkedCases.length === 0 && rawHotspots.length > 0) {
-      linkedCases.push(rawHotspots[0]);
-    }
+    // Populate Linked Incident FIRs for this Offender
+    const linkedCases = rawHotspots.filter(h => Math.random() > 0.35).slice(0, 5);
+    if (linkedCases.length === 0 && rawHotspots.length > 0) linkedCases.push(rawHotspots[0]);
 
-    if (linkedTbody) {
-      linkedTbody.innerHTML = linkedCases.map(c => `
+    if (odLinkedTbody) {
+      odLinkedTbody.innerHTML = linkedCases.map(c => `
         <tr>
           <td><span class="td-primary">${c.fir_number}</span></td>
-          <td><span class="td-sub">${c.police_station}</span></td>
-          <td><span class="td-sub">${c.district}</span></td>
-          <td><span class="badge ${/murder|homicide|rape/i.test(c.crime_head) ? 'high' : 'low'}">${c.crime_head}</span></td>
-          <td><span class="td-sub">${c.incident_timestamp}</span></td>
-          <td><button class="btn-dossier btn-sd-dossier" data-fir="${c.fir_number}">VIEW CASE DOSSIER →</button></td>
+          <td><span class="td-sub">${c.district} / ${c.police_station}</span></td>
+          <td><span class="badge ${/murder|homicide|rape|violent/i.test(c.crime_head) ? 'high' : 'low'}">${c.crime_head}</span></td>
+          <td><button class="btn-recid-inspect btn-od-case" data-fir="${c.fir_number}">VIEW CASE DOSSIER →</button></td>
         </tr>
       `).join('');
 
-      linkedTbody.querySelectorAll('.btn-sd-dossier').forEach(btn => {
+      odLinkedTbody.querySelectorAll('.btn-od-case').forEach(btn => {
         btn.addEventListener('click', () => {
           const fir = btn.getAttribute('data-fir');
-          modal.classList.remove('active');
           openCaseDossierPage(fir);
         });
       });
     }
 
-    modal.classList.add('active');
+    // Render D3 Dossier Network Graph for this suspect
+    renderDossierNetworkGraph(
+      [
+        { id: sId, label: sName, type: 'suspect', age: sAge, gender: sGender, base_risk_score: parseFloat(sRisk) },
+        { id: 'KA-BEN-2026-0002', label: 'KA-BEN-2026-0002', type: 'fir' },
+        { id: 'KA-BGU-2023-080802', label: 'KA-BGU-2023-080802', type: 'fir' },
+        { id: 'LOC-KORAMANGALA', label: '📍 Koramangala PS Zone', type: 'location' }
+      ],
+      [
+        { source: sId, target: 'KA-BEN-2026-0002', value: 1.5 },
+        { source: sId, target: 'KA-BGU-2023-080802', value: 1 },
+        { source: sId, target: 'LOC-KORAMANGALA', value: 1 }
+      ],
+      'od-network-graph',
+      'od-network-tooltip'
+    );
+
+    // Switch view to dedicated fullscreen offender dossier page
+    setActiveView('offender-dossier');
+  };
+
+  const openSuspectDossierModal = (suspectData) => {
+    openSuspectDossierPage(suspectData);
   };
 
   // Wire close suspect modal events
@@ -886,9 +950,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  const renderDossierNetworkGraph = (nodes, links) => {
-    const graphBox = document.getElementById('dossier-network-graph');
-    const graphTooltip = document.getElementById('dossier-network-tooltip');
+  const renderDossierNetworkGraph = (nodes, links, containerId = 'dossier-network-graph', tooltipId = 'dossier-network-tooltip') => {
+    const graphBox = document.getElementById(containerId);
+    const graphTooltip = document.getElementById(tooltipId);
     if (!graphBox) return;
     graphBox.innerHTML = '';
 
@@ -896,7 +960,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const width = rect.width || 450;
     const height = rect.height || 380;
 
-    const svg = d3.select('#dossier-network-graph').append('svg')
+    const svg = d3.select(`#${containerId}`).append('svg')
       .attr('width', '100%')
       .attr('height', '100%')
       .attr('viewBox', `0 0 ${width} ${height}`);
@@ -1004,14 +1068,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const btnBackToMap = document.getElementById('btn-back-to-map');
   const btnBackToStation = document.getElementById('btn-back-to-station');
   const btnDossierToMap = document.getElementById('btn-dossier-to-map');
+  const btnBackToRecidivism = document.getElementById('btn-back-to-recidivism');
 
   if (btnBackToMap) {
     btnBackToMap.addEventListener('click', () => {
-      const appBody = document.querySelector('.app-body');
-      if (appBody) {
-        appBody.classList.remove('view-station-cases', 'view-case-dossier');
-        appBody.classList.add('view-map');
-      }
+      setActiveView('map');
     });
   }
 
@@ -1020,24 +1081,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (currentStationName) {
         openStationCasesPage(currentStationName, currentDistrictName);
       } else {
-        const appBody = document.querySelector('.app-body');
-        if (appBody) {
-          appBody.classList.remove('view-case-dossier');
-          appBody.classList.add('view-map');
-        }
+        setActiveView('map');
       }
     });
   }
 
   if (btnDossierToMap) {
     btnDossierToMap.addEventListener('click', () => {
-      const appBody = document.querySelector('.app-body');
-      if (appBody) {
-        appBody.classList.remove('view-station-cases', 'view-case-dossier');
-        appBody.classList.add('view-map');
-      }
+      setActiveView('map');
     });
   }
+
+  if (btnBackToRecidivism) {
+    btnBackToRecidivism.addEventListener('click', () => {
+      setActiveView('recidivism');
+    });
+  }
+
 
 
   const updateTimeBadge = (hour) => {
@@ -1194,7 +1254,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- SECTION 5: D3 NETWORK GRAPH ENGINE (Palantir Gotham Hierarchical Structure) ---
   let activeNetworkFir = 'KA-BGU-2023-000002';
-  let activeHopDepth = 2;
+  let activeHopDepth = 1;
 
   const hopBtns = document.querySelectorAll('.hop-btn');
   hopBtns.forEach(btn => {
@@ -1248,8 +1308,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const secondarySuspects = nodes.filter(d => d.type === 'suspect' && d.degree >= 2);
       const syndicateCells = nodes.filter(d => d.type === 'syndicate_cell');
 
-      const ySpacing = 82;
-      const startY = 40;
+      const ySpacing = Math.min(85, Math.max(50, (height - 80) / (hopDepth === 1 ? 2 : hopDepth === 2 ? 4 : 5)));
+      const startY = Math.max(30, (height - ySpacing * (hopDepth === 1 ? 2 : hopDepth === 2 ? 4 : 5)) / 2);
 
       // Tier 1: Main Target FIR (Top Center)
       if (targetFir) {
@@ -1269,7 +1329,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startX = width / 2 - ((primarySuspects.length - 1) * suspectSpacing) / 2;
         primarySuspects.forEach((s, idx) => {
           s.fx = startX + idx * suspectSpacing;
-          s.fy = startY + ySpacing * 2.0;
+          s.fy = startY + ySpacing * 2;
         });
       }
 
@@ -1279,7 +1339,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startX4 = width / 2 - ((secondaryCases.length - 1) * caseSpacing) / 2;
         secondaryCases.forEach((n, idx) => {
           n.fx = startX4 + idx * caseSpacing;
-          n.fy = startY + ySpacing * 3.15;
+          n.fy = startY + ySpacing * 3;
         });
       }
 
@@ -1289,7 +1349,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startX5 = width / 2 - ((secondarySuspects.length - 1) * secSuspectSpacing) / 2;
         secondarySuspects.forEach((n, idx) => {
           n.fx = startX5 + idx * secSuspectSpacing;
-          n.fy = startY + ySpacing * 4.25;
+          n.fy = startY + ySpacing * 4;
         });
       }
 
@@ -1299,7 +1359,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const startX6 = width / 2 - ((syndicateCells.length - 1) * cellSpacing) / 2;
         syndicateCells.forEach((n, idx) => {
           n.fx = startX6 + idx * cellSpacing;
-          n.fy = startY + ySpacing * 5.35;
+          n.fy = startY + ySpacing * 5;
         });
       }
 
@@ -2548,7 +2608,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (DISTRICT_COORDS && DISTRICT_COORDS[districtName]) {
           const coords = DISTRICT_COORDS[districtName];
           if (map) {
-            map.flyTo(coords, 12, { duration: 1.5 });
+            map.flyTo(coords.center, coords.zoom || 12, { duration: 1.5 });
           }
         }
       });
@@ -2597,7 +2657,454 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   loadAnomalyRadar();
+
+  // --- SECTION: DEMOGRAPHIC & RECIDIVISM PROPENSITY MATRIX ---
+  let recidivismProfiles = [];
+  let currentRecidGender = 'all';
+  let currentRecidCrime = 'all';
+  let recidivismScatterInstance = null;
+
+  const loadRecidivismMatrix = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/recidivism`);
+      if (!response.ok) throw new Error('API Error');
+      const data = await response.json();
+
+      recidivismProfiles = data.profiles || [];
+
+      // Update Cohort Telemetry Cards
+      const summary = data.cohort_summary || {};
+      const youthRateEl = document.getElementById('recid-youth-rate');
+      const youthSubEl = document.getElementById('recid-youth-sub');
+      const adultRateEl = document.getElementById('recid-adult-rate');
+      const adultSubEl = document.getElementById('recid-adult-sub');
+      const femaleRateEl = document.getElementById('recid-female-rate');
+      const femaleSubEl = document.getElementById('recid-female-sub');
+      const badgeEl = document.getElementById('recidivism-count-badge');
+
+      if (youthRateEl) youthRateEl.textContent = summary.youth_male_rate || '68.2%';
+      if (youthSubEl) youthSubEl.textContent = `AVG ${summary.youth_male_avg_priors || '4.4'} PRIOR OFFENSES`;
+      if (adultRateEl) adultRateEl.textContent = summary.adult_male_rate || '51.4%';
+      if (adultSubEl) adultSubEl.textContent = `AVG ${summary.adult_male_avg_priors || '3.1'} PRIOR OFFENSES`;
+      if (femaleRateEl) femaleRateEl.textContent = summary.female_rate || '24.8%';
+      if (femaleSubEl) femaleSubEl.textContent = `AVG ${summary.female_avg_priors || '1.4'} PRIOR OFFENSES`;
+      if (badgeEl) badgeEl.textContent = `${(data.total_profiles || recidivismProfiles.length).toLocaleString('en-IN')} PROFILES ANALYZED (STATEWIDE)`;
+
+      renderRecidivismView();
+    } catch (err) {
+      console.warn('[-] Error loading recidivism matrix:', err);
+    }
+  };
+
+  const renderRecidivismView = () => {
+    // 1. Filter Profiles
+    const filtered = recidivismProfiles.filter(p => {
+      const matchGender = currentRecidGender === 'all' || p.gender === currentRecidGender;
+      const matchCrime = currentRecidCrime === 'all' || p.crime_head === currentRecidCrime;
+      return matchGender && matchCrime;
+    });
+
+    // 2. Render Scatter Chart
+    renderRecidivismScatterChart(filtered);
+
+    // 3. Render Intelligence Table
+    renderRecidivismTable(filtered);
+  };
+
+  const renderRecidivismScatterChart = (profiles) => {
+    const canvas = document.getElementById('recidivismScatterChart');
+    if (!canvas) return;
+
+    if (recidivismScatterInstance) {
+      recidivismScatterInstance.destroy();
+    }
+
+    // Apply deterministic micro-jitter per offender ID for clean continuous visual spread
+    const scatterData = profiles.map(p => {
+      const numId = parseInt(p.offender_id.replace(/\D/g, ''), 10) || 0;
+      const jitterX = (((numId * 17) % 100) / 100 - 0.5) * 0.75;
+      const jitterY = (((numId * 31) % 100) / 100 - 0.5) * 0.5;
+      return {
+        x: parseFloat((p.age + jitterX).toFixed(2)),
+        y: parseFloat((Math.max(0, p.prior_offenses + jitterY)).toFixed(2)),
+        r: Math.max(3.5, Math.min(7.5, p.risk_score / 16)),
+        profile: p
+      };
+    });
+
+    const ctx = canvas.getContext('2d');
+    recidivismScatterInstance = new Chart(ctx, {
+      type: 'bubble',
+      data: {
+        datasets: [{
+          label: 'Offender Profiles',
+          data: scatterData,
+          backgroundColor: (context) => {
+            const raw = context.raw;
+            if (!raw) return 'rgba(217, 119, 6, 0.65)';
+            const p = raw.profile;
+            if (p.gender === 'FEMALE') return 'rgba(37, 99, 235, 0.75)';
+            if (p.age >= 18 && p.age <= 25 && p.prior_offenses >= 3) return 'rgba(220, 38, 38, 0.85)';
+            return 'rgba(217, 119, 6, 0.7)';
+          },
+          borderColor: (context) => {
+            const raw = context.raw;
+            if (!raw) return '#D97706';
+            const p = raw.profile;
+            if (p.gender === 'FEMALE') return '#2563EB';
+            if (p.age >= 18 && p.age <= 25 && p.prior_offenses >= 3) return '#DC2626';
+            return '#D97706';
+          },
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: 'nearest',
+          axis: 'xy',
+          intersect: true
+        },
+        onClick: (event, activeElements) => {
+          if (activeElements && activeElements.length > 0) {
+            const clickedIndex = activeElements[0].index;
+            const raw = scatterData[clickedIndex];
+            if (raw && raw.profile) {
+              const p = raw.profile;
+              openSuspectDossierPage(p);
+            }
+          }
+        },
+        onHover: (event, chartElement) => {
+          if (event.native && event.native.target) {
+            event.native.target.style.cursor = (chartElement && chartElement.length > 0) ? 'pointer' : 'default';
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: true,
+            mode: 'nearest',
+            intersect: true,
+            displayColors: false,
+            backgroundColor: '#090B10',
+            borderColor: '#1F2433',
+            borderWidth: 1,
+            padding: 10,
+            titleFont: { family: 'IBM Plex Mono', size: 11, weight: 'bold' },
+            bodyFont: { family: 'IBM Plex Mono', size: 10 },
+            titleColor: '#E8E8E8',
+            bodyColor: '#9CA3AF',
+            filter: (item, index) => {
+              // Strictly limit tooltip output to the single nearest item being hovered over
+              return index === 0;
+            },
+            callbacks: {
+              title: (items) => {
+                if (!items || !items.length) return '';
+                const p = items[0].raw.profile;
+                return `${p.offender_name} (${p.offender_id})`;
+              },
+              label: (item) => {
+                const p = item.raw.profile;
+                return [
+                  `AGE: ${p.age}  |  GENDER: ${p.gender}`,
+                  `PRIOR OFFENSES: ${p.prior_offenses} Convictions`,
+                  `CATEGORY: ${p.crime_head}  |  DISTRICT: ${p.district}`,
+                  `RISK SCORE: ${p.risk_score} (${p.recidivism_risk_level})`,
+                  `👉 CLICK DOT TO INSPECT DOSSIER`
+                ];
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            title: { display: true, text: 'OFFENDER AGE (YEARS)', color: '#6B7280', font: { family: 'IBM Plex Mono', size: 9, weight: 'bold' } },
+            ticks: { color: '#8A93A6', font: { family: 'IBM Plex Mono', size: 9 } },
+            grid: { color: '#161924' },
+            min: 15,
+            max: 70
+          },
+          y: {
+            title: { display: true, text: 'PRIOR CONVICTION FREQUENCY', color: '#6B7280', font: { family: 'IBM Plex Mono', size: 9, weight: 'bold' } },
+            ticks: { color: '#8A93A6', font: { family: 'IBM Plex Mono', size: 9 }, stepSize: 1 },
+            grid: { color: '#161924' },
+            min: -0.5,
+            max: 10
+          }
+        }
+      }
+    });
+  };
+
+
+  const renderRecidivismTable = (profiles) => {
+    const tbody = document.getElementById('recidivism-table-body');
+    if (!tbody) return;
+
+    if (profiles.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:16px;color:#6B7280;">No offender profiles match the current filter criteria.</td></tr>`;
+      return;
+    }
+
+    const displayCount = 100;
+    const topProfiles = profiles.slice(0, displayCount);
+
+    let html = topProfiles.map(p => {
+      const isCritical = p.recidivism_risk_level === 'CRITICAL';
+      const isHigh = p.recidivism_risk_level === 'HIGH';
+      const color = isCritical ? '#DC2626' : isHigh ? '#D97706' : '#2563EB';
+
+      return `
+        <tr>
+          <td style="font-weight:bold;color:#E8E8E8;">${p.offender_id}</td>
+          <td style="color:#E8E8E8;">${p.offender_name}</td>
+          <td>${p.age} / ${p.gender}</td>
+          <td style="font-weight:bold;color:${p.prior_offenses >= 3 ? '#DC2626' : '#E8E8E8'}">${p.prior_offenses} Convictions</td>
+          <td>${p.crime_head}</td>
+          <td>${p.district}</td>
+          <td><span class="anom-badge" style="color:${color};border:1px solid ${color}">${p.risk_score} (${p.recidivism_risk_level})</span></td>
+          <td><button class="btn-recid-inspect" data-id="${p.offender_id}">DOSSIER →</button></td>
+        </tr>
+      `;
+    }).join('');
+
+    if (profiles.length > displayCount) {
+      html += `
+        <tr>
+          <td colspan="8" style="text-align:center;padding:10px;font-family:'IBM Plex Mono';font-size:9px;color:#9CA3AF;background:#141720;">
+            SHOWING TOP ${displayCount} HIGHEST RISK PROFILES OUT OF <strong>${profiles.length.toLocaleString('en-IN')}</strong> MATCHING STATEWIDE RECORDS · USE FILTERS TO ISOLATE COHORTS
+          </td>
+        </tr>
+      `;
+    }
+
+    tbody.innerHTML = html;
+
+    // Attach click event handlers to DOSSIER buttons
+    tbody.querySelectorAll('.btn-recid-inspect').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const offId = btn.getAttribute('data-id');
+        const profile = profiles.find(p => p.offender_id === offId);
+        if (profile) {
+          openSuspectDossierPage(profile);
+        }
+      });
+    });
+  };
+
+
+
+  // Wire Recidivism Gender & Crime Filter Chips
+  const genderChips = document.querySelectorAll('#recidivism-gender-chips .gotham-filter-btn');
+  genderChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      genderChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentRecidGender = chip.getAttribute('data-gender');
+      renderRecidivismView();
+    });
+  });
+
+  const crimeChips = document.querySelectorAll('#recidivism-crime-chips .gotham-filter-btn');
+  crimeChips.forEach(chip => {
+    chip.addEventListener('click', () => {
+      crimeChips.forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      currentRecidCrime = chip.getAttribute('data-crime');
+      renderRecidivismView();
+    });
+  });
+
+
+  // ==========================================================================
+  // SECTION: AUTOMATED MODUS OPERANDI (MO) SIMILARITY SEARCH
+  // ==========================================================================
+  const loadBehavioralMOMatches = async (firNumber) => {
+    const tbody = document.getElementById('case-mo-matches-tbody');
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-3); padding:12px;">[ COMPUTING SIMILARITY SIGNATURES... ]</td></tr>`;
+
+    try {
+      const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/mo-matches?fir_number=${encodeURIComponent(firNumber)}`);
+      if (!response.ok) throw new Error('Failed to fetch MO matches');
+      const data = await response.json();
+      const matches = data.matches || [];
+
+      if (matches.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-3); padding:12px;">No matching behavioral patterns detected above threshold.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = matches.map(m => {
+        const sign = m.matched_terms && m.matched_terms.length > 0 ? m.matched_terms.map(t => `#${t}`).join(', ') : 'No Overlap';
+        const color = m.similarity_percent >= 80 ? '#DC2626' : m.similarity_percent >= 50 ? '#D97706' : '#2563EB';
+        return `
+          <tr>
+            <td style="font-weight:bold; color:#E8E8E8;">${m.fir_number}</td>
+            <td>${m.police_station} (${m.district})</td>
+            <td><span class="anom-badge" style="color:${color}; border:1px solid ${color}; padding: 1px 4px; font-size: 8.5px;">${m.similarity_percent}% Match</span></td>
+            <td style="font-family:'IBM Plex Mono', monospace; font-size:8px; color:#A0A5B1; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${sign}">${sign}</td>
+            <td><button class="btn-recid-inspect btn-mo-view-case" data-fir="${m.fir_number}">VIEW →</button></td>
+          </tr>
+        `;
+      }).join('');
+
+      tbody.querySelectorAll('.btn-mo-view-case').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const targetFir = btn.getAttribute('data-fir');
+          openCaseDossierPage(targetFir);
+        });
+      });
+
+    } catch (err) {
+      console.warn('[-] Error in loadBehavioralMOMatches:', err);
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:#DC2626; padding:12px;">Engine offline or query limit reached.</td></tr>`;
+    }
+  };
+
+
+  // ==========================================================================
+  // SECTION: STATEWIDE SYNDICATES DOSSIER VIEW
+  // ==========================================================================
+  let currentSyndicateId = '';
+
+  const loadSyndicatesList = async () => {
+    const selector = document.getElementById('syn-selector');
+    if (!selector) return;
+
+    try {
+      const response = await fetch(`${API_BASE}/server/ashen_api/api/syndicates`);
+      if (!response.ok) throw new Error('Failed to fetch syndicates');
+      const data = await response.json();
+      const syndicates = data.syndicates || [];
+
+      selector.innerHTML = syndicates.map(s => `
+        <option value="${s.id}">${s.name} (${s.id})</option>
+      `).join('');
+
+      if (!selector.hasAttribute('data-wired')) {
+        selector.setAttribute('data-wired', 'true');
+        selector.addEventListener('change', () => {
+          loadSyndicateDossier(selector.value);
+        });
+      }
+
+      if (syndicates.length > 0) {
+        loadSyndicateDossier(syndicates[0].id);
+      }
+    } catch (err) {
+      console.error('[-] Error loading syndicates list:', err);
+    }
+  };
+
+  const loadSyndicateDossier = async (syndicateId) => {
+    currentSyndicateId = syndicateId;
+    
+    const dossierTitleId = document.getElementById('syn-dossier-id');
+    const codeVal = document.getElementById('syn-code-val');
+    const bossVal = document.getElementById('syn-boss-val');
+    const territoryVal = document.getElementById('syn-territory-val');
+    const sizeVal = document.getElementById('syn-size-val');
+    const moVal = document.getElementById('syn-mo-val');
+    const membersTbody = document.getElementById('syn-members-tbody');
+
+    if (dossierTitleId) dossierTitleId.textContent = syndicateId;
+
+    try {
+      const response = await fetch(`${API_BASE}/server/ashen_api/api/syndicates/${syndicateId}`);
+      if (!response.ok) throw new Error('Failed to fetch syndicate details');
+      const data = await response.json();
+
+      const syn = data.syndicate || {};
+      const members = data.members || [];
+      const hierarchy = data.hierarchy || { nodes: [], links: [] };
+
+      if (codeVal) codeVal.textContent = syn.id || '—';
+      if (bossVal) {
+        bossVal.innerHTML = `<span style="color:#DC2626; font-weight:bold; cursor:pointer; text-decoration:underline;" class="btn-syn-boss" data-boss-id="${syn.boss_id}">${syn.boss}</span>`;
+        const bossBtn = bossVal.querySelector('.btn-syn-boss');
+        if (bossBtn) {
+          bossBtn.addEventListener('click', () => {
+            const bossProfile = members.find(m => m.offender_id === syn.boss_id) || {
+              offender_id: syn.boss_id,
+              offender_name: syn.boss,
+              age: 46,
+              gender: 'MALE',
+              prior_offenses: 10,
+              risk_score: 98.0,
+              crime_head: 'Narcotics',
+              district: 'Bengaluru Urban',
+              recidivism_risk_level: 'CRITICAL'
+            };
+            openSuspectDossierPage(bossProfile);
+          });
+        }
+      }
+      if (territoryVal) territoryVal.textContent = syn.territory || '—';
+      if (sizeVal) sizeVal.textContent = `${syn.size || members.length} Active Tracked Nodes`;
+      if (moVal) moVal.textContent = syn.mo_pattern || '—';
+
+      if (membersTbody) {
+        if (members.length === 0) {
+          membersTbody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:12px; color:#6B7280;">No syndicate cell members registered.</td></tr>`;
+        } else {
+          membersTbody.innerHTML = members.map(m => {
+            const hasWarrant = m.warrants !== 'None';
+            const riskColor = m.base_risk_score >= 90 ? '#DC2626' : m.base_risk_score >= 70 ? '#D97706' : '#2563EB';
+            return `
+              <tr>
+                <td>
+                  <span class="td-primary" style="font-weight:bold;">${m.offender_name}</span><br>
+                  <span class="td-sub">${m.offender_id}</span>
+                </td>
+                <td><span style="color:#C8CDD6">${m.aliases}</span></td>
+                <td><span style="color:#9CA3AF">${m.role}</span></td>
+                <td><span class="badge ${hasWarrant ? 'high' : 'low'}" style="font-size:8px;">${m.warrants}</span></td>
+                <td><span class="badge ${m.bail_status === 'Revoked' ? 'high' : m.bail_status === 'In Custody' ? 'med' : 'low'}" style="font-size:8px;">${m.bail_status}</span></td>
+                <td><button class="btn-recid-inspect btn-syn-member-profile" data-id="${m.offender_id}">PROFILE →</button></td>
+              </tr>
+            `;
+          }).join('');
+
+          membersTbody.querySelectorAll('.btn-syn-member-profile').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const mId = btn.getAttribute('data-id');
+              const member = members.find(m => m.offender_id === mId);
+              if (member) {
+                const fullProfile = {
+                  offender_id: member.offender_id,
+                  offender_name: member.offender_name,
+                  age: member.age,
+                  gender: member.gender,
+                  prior_offenses: member.role.includes('Boss') ? 10 : member.role.includes('Lieutenant') ? 5 : 2,
+                  risk_score: member.base_risk_score,
+                  crime_head: syndicateId === 'SYN-BGU-01' ? 'Narcotics' : syndicateId === 'SYN-BLG-02' ? 'Property Theft' : 'Violent Crime',
+                  district: syndicateId === 'SYN-BGU-01' ? 'Bengaluru Urban' : syndicateId === 'SYN-BLG-02' ? 'Belagavi' : 'Mysuru',
+                  recidivism_risk_level: member.base_risk_score >= 90 ? 'CRITICAL' : member.base_risk_score >= 70 ? 'HIGH' : 'MEDIUM'
+                };
+                openSuspectDossierPage(fullProfile);
+              }
+            });
+          });
+        }
+      }
+
+      renderSyndicateHierarchyGraph(hierarchy.nodes, hierarchy.links);
+
+    } catch (err) {
+      console.error('[-] Error loading syndicate dossier details:', err);
+    }
+  };
+
+  const renderSyndicateHierarchyGraph = (nodes, links) => {
+    renderDossierNetworkGraph(nodes, links, 'syn-hierarchy-graph', 'syn-hierarchy-tooltip');
+  };
 });
+
 
 
 
