@@ -1661,9 +1661,9 @@ app.post('/api/fir/inject', async (req, res) => {
 // 7. GET /api/admin/backfill
 app.get('/api/admin/backfill', async (req, res) => {
   try {
-    let csvPath = path.join(__dirname, '..', '..', 'offenders_seed.csv');
+    let csvPath = path.join(__dirname, '..', '..', 'data', 'seeds', 'offenders_seed.csv');
     if (!fs.existsSync(csvPath)) {
-      csvPath = path.join(process.cwd(), 'offenders_seed.csv');
+      csvPath = path.join(process.cwd(), 'data', 'seeds', 'offenders_seed.csv');
     }
     
     if (!fs.existsSync(csvPath)) {

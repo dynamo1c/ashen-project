@@ -21,3 +21,8 @@ env/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Media & Archives
+*.mp4
+*.zip
+

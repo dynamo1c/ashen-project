@@ -1,8 +1,8 @@
 import subprocess
 import os
 
-repo = os.path.dirname(os.path.abspath(__file__))
-commit_msg = "docs: GitHub presentation setup, README, Gotham SVG visual assets, social preview banner, license, and pre-publish hygiene"
+repo = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+commit_msg = "feat: Palantir Gotham UI refactoring, Crime Anomaly Radar engine, resizable panels & SPA route fixes"
 
 print(f"[*] Processing repository at: {repo}")
 

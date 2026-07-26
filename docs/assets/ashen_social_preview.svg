@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&amp;family=IBM+Plex+Sans:wght@400;600&amp;display=swap');
+      .bg { fill: #13151A; }
+      .grid { stroke: #1C1E24; stroke-width: 1; }
+      .card { fill: #1C1E24; stroke: rgba(255,255,255,0.08); stroke-width: 1; rx: 6px; }
+      .inner-card { fill: #24272E; stroke: rgba(255,255,255,0.06); stroke-width: 1; rx: 4px; }
+      .title-main { font-family: 'IBM Plex Mono', monospace; font-weight: 700; font-size: 52px; fill: #C8CDD6; letter-spacing: 0.12em; }
+      .sub-title { font-family: 'IBM Plex Mono', monospace; font-weight: 500; font-size: 16px; fill: #6B7280; letter-spacing: 0.22em; }
+      .tagline { font-family: 'IBM Plex Sans', sans-serif; font-size: 20px; fill: #9CA3AF; }
+      .mono-label { font-family: 'IBM Plex Mono', monospace; font-size: 13px; fill: #4B5261; letter-spacing: 0.1em; }
+      .mono-val { font-family: 'IBM Plex Mono', monospace; font-size: 18px; fill: #C8CDD6; font-weight: 500; }
+      .badge-danger { fill: rgba(198,74,74,0.18); stroke: #C64A4A; stroke-width: 1; }
+      .badge-text-danger { font-family: 'IBM Plex Mono', monospace; font-size: 12px; fill: #C64A4A; font-weight: 500; }
+    </style>
+  </defs>
+
+  <rect class="bg" width="1280" height="640"/>
+
+  <!-- Tactical Grid -->
+  <line x1="0" y1="80" x2="1280" y2="80" class="grid"/>
+  <line x1="0" y1="560" x2="1280" y2="560" class="grid"/>
+  <line x1="120" y1="0" x2="120" y2="640" class="grid"/>
+  <line x1="1160" y1="0" x2="1160" y2="640" class="grid"/>
+
+  <!-- Header Chrome -->
+  <rect x="50" y="25" width="1180" height="35" fill="#0F1114" rx="3" stroke="rgba(255,255,255,0.06)"/>
+  <text x="70" y="48" class="mono-label">SYS // ASHEN_PROTOCOL_KSP_DATATHON_2026</text>
+  <text x="860" y="48" class="mono-label">KARNATAKA STATE POLICE · OFFICIAL SUBMISSION</text>
+  <circle cx="1205" cy="42" r="5" fill="#3A8C5C"/>
+
+  <!-- Main Hero Card -->
+  <g transform="translate(160, 110)">
+    <rect x="0" y="0" width="960" height="420" class="card"/>
+
+    <!-- Title -->
+    <text x="50" y="75" class="title-main">⚔️ ASHEN PROTOCOL</text>
+    <text x="52" y="110" class="sub-title">PALANTIR GOTHAM OPERATIONAL CRIME INTELLIGENCE PLATFORM</text>
+
+    <!-- Tagline -->
+    <text x="52" y="160" class="tagline">High-density decision-support system fusing 75,000 FIR Records, D3 accomplice graphs,</text>
+    <text x="52" y="190" class="tagline">Leaflet GIS heatmaps, and Cerebras 120B multi-turn AI Command Copilot.</text>
+
+    <!-- Key Metrics Grid -->
+    <g transform="translate(52, 230)">
+      <rect x="0" y="0" width="200" height="80" class="inner-card"/>
+      <text x="18" y="30" class="mono-label">INCIDENT RECORDS</text>
+      <text x="18" y="60" class="mono-val">75,000 FIRs</text>
+
+      <rect x="220" y="0" width="200" height="80" class="inner-card"/>
+      <text x="238" y="30" class="mono-label">OFFENDER PROFILES</text>
+      <text x="238" y="60" class="mono-val">100,000 Records</text>
+
+      <rect x="440" y="0" width="200" height="80" class="inner-card"/>
+      <text x="458" y="30" class="mono-label">AI COPILOT</text>
+      <text x="458" y="60" class="mono-val">Cerebras 120B</text>
+
+      <rect x="660" y="0" width="196" height="80" class="inner-card"/>
+      <text x="678" y="30" class="mono-label">INFRASTRUCTURE</text>
+      <text x="678" y="60" class="mono-val">Zoho Catalyst</text>
+    </g>
+
+    <!-- Footer Banner Inside Card -->
+    <rect x="52" y="340" width="804" height="40" fill="#0F1114" rx="3"/>
+    <text x="70" y="365" class="mono-label">IDEOLOGY: HUMAN-IN-THE-LOOP DECISION SUPPORT · ZERO PLACEHOLDERS · PRODUCTION READY</text>
+    <rect x="740" y="348" width="100" height="24" class="badge-danger" rx="2"/>
+    <text x="790" y="364" class="badge-text-danger" text-anchor="middle">SUBMISSION</text>
+  </g>
+
+  <!-- Bottom Bar -->
+  <rect x="50" y="580" width="1180" height="30" fill="#0F1114" rx="3" stroke="rgba(255,255,255,0.06)"/>
+  <text x="70" y="600" class="mono-label">KSP DATATHON 2026 // TEAM ASHEN PROTOCOL</text>
+  <text x="890" y="600" class="mono-label">LICENSED FOR JUDGING REVIEW &amp; KSP EVALUATION</text>
+</svg>

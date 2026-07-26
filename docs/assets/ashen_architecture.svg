@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" width="1000" height="520">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;700&amp;family=IBM+Plex+Sans:wght@400;600&amp;display=swap');
+      .bg { fill: #13151A; }
+      .layer-box { fill: #1C1E24; stroke: rgba(255,255,255,0.08); stroke-width: 1; rx: 6px; }
+      .layer-title { font-family: 'IBM Plex Mono', monospace; font-size: 11px; fill: #4B5261; font-weight: 700; letter-spacing: 0.12em; }
+      .comp-box { fill: #24272E; stroke: rgba(255,255,255,0.12); stroke-width: 1; rx: 4px; }
+      .comp-box-ai { fill: #24272E; stroke: #C64A4A; stroke-width: 1.5; rx: 4px; }
+      .comp-box-db { fill: #24272E; stroke: #B8862A; stroke-width: 1.5; rx: 4px; }
+      .comp-name { font-family: 'IBM Plex Mono', monospace; font-size: 13px; fill: #C8CDD6; font-weight: 500; }
+      .comp-sub { font-family: 'IBM Plex Sans', sans-serif; font-size: 11px; fill: #6B7280; }
+      .arrow { stroke: #4B5261; stroke-width: 1.5; fill: none; marker-end: url(#arrowhead); }
+      .arrow-ai { stroke: #C64A4A; stroke-width: 1.5; fill: none; stroke-dasharray: 4,3; marker-end: url(#arrowhead-ai); }
+      .accent-red { fill: #C64A4A; }
+      .accent-gold { fill: #B8862A; }
+      .accent-green { fill: #3A8C5C; }
+    </style>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4B5261"/>
+    </marker>
+    <marker id="arrowhead-ai" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#C64A4A"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect class="bg" width="1000" height="520"/>
+
+  <!-- Diagram Title -->
+  <text x="30" y="35" font-family="IBM Plex Mono" font-size="14" fill="#C8CDD6" font-weight="700" letter-spacing="0.1em">SYSTEM ARCHITECTURE // ASHEN PROTOCOL</text>
+  <text x="30" y="55" font-family="IBM Plex Sans" font-size="12" fill="#6B7280">End-to-End Serverless Intelligence Pipeline on Zoho Catalyst Infrastructure</text>
+
+  <!-- LAYER 1: CLIENT SPA LAYER -->
+  <rect x="30" y="80" width="940" height="110" class="layer-box"/>
+  <text x="45" y="102" class="layer-title">PRESENTATION LAYER · CLIENT SPA (ZOHO CATALYST SLATE CDN)</text>
+
+  <!-- Client Components -->
+  <g transform="translate(50, 115)">
+    <rect x="0" y="0" width="190" height="60" class="comp-box"/>
+    <text x="12" y="24" class="comp-name">Leaflet.js GIS</text>
+    <text x="12" y="42" class="comp-sub">Map Density &amp; Clusters</text>
+
+    <rect x="210" y="0" width="190" height="60" class="comp-box"/>
+    <text x="222" y="24" class="comp-name">D3.js Network</text>
+    <text x="222" y="42" class="comp-sub">Force-Directed Graph</text>
+
+    <rect x="420" y="0" width="200" height="60" class="comp-box-ai"/>
+    <text x="432" y="24" class="comp-name">Voice &amp; AI Chat UI</text>
+    <text x="432" y="42" class="comp-sub">Web Speech API / Chips</text>
+
+    <rect x="640" y="0" width="230" height="60" class="comp-box"/>
+    <text x="652" y="24" class="comp-name">Analytical Views</text>
+    <text x="652" y="42" class="comp-sub">Radar / Briefing / Recidivism</text>
+  </g>
+
+  <!-- Arrows: Client to API -->
+  <path d="M 520 190 L 520 230" class="arrow"/>
+  <text x="530" y="215" font-family="IBM Plex Mono" font-size="10" fill="#6B7280">HTTPS / REST API</text>
+
+  <!-- LAYER 2: BACKEND SERVERLESS API -->
+  <rect x="30" y="230" width="940" height="120" class="layer-box"/>
+  <text x="45" y="252" class="layer-title">BUSINESS LOGIC LAYER · ZOHO CATALYST ADVANCED I/O (NODE.JS 18 + EXPRESS)</text>
+
+  <!-- API Components -->
+  <g transform="translate(50, 265)">
+    <rect x="0" y="0" width="210" height="65" class="comp-box"/>
+    <text x="12" y="24" class="comp-name">Express Router</text>
+    <text x="12" y="44" class="comp-sub">/analytics, /map, /network</text>
+
+    <rect x="230" y="0" width="230" height="65" class="comp-box-ai"/>
+    <text x="242" y="24" class="comp-name">AI Agent Loop</text>
+    <text x="242" y="44" class="comp-sub">5-Turn Multi-Tool Executor</text>
+
+    <rect x="480" y="0" width="200" height="65" class="comp-box"/>
+    <text x="492" y="24" class="comp-name">ZCQL Engine</text>
+    <text x="492" y="44" class="comp-sub">Parameterized Query Chains</text>
+
+    <rect x="690" y="0" width="180" height="65" class="comp-box"/>
+    <text x="702" y="24" class="comp-name">Security &amp; Rate Limit</text>
+    <text x="702" y="44" class="comp-sub">In-Memory 20req/5min IP</text>
+  </g>
+
+  <!-- Arrows: API to Data & AI -->
+  <path d="M 280 350 L 280 390" class="arrow"/>
+  <path d="M 680 350 L 680 390" class="arrow-ai"/>
+
+  <!-- LAYER 3: DATA & AI ENGINES -->
+  <rect x="30" y="390" width="940" height="110" class="layer-box"/>
+  <text x="45" y="412" class="layer-title">DATASTORE &amp; EXTERNAL COGNITIVE ENGINES</text>
+
+  <g transform="translate(50, 425)">
+    <!-- Datastore -->
+    <rect x="0" y="0" width="410" height="60" class="comp-box-db"/>
+    <text x="14" y="24" class="comp-name">Zoho Catalyst Data Store (ZCQL)</text>
+    <text x="14" y="44" class="comp-sub">FIR_Records (75k) · Offenders (100k) · District_Risk_Scores</text>
+
+    <!-- AI Models -->
+    <rect x="440" y="0" width="440" height="60" class="comp-box-ai"/>
+    <text x="454" y="24" class="comp-name">Cerebras Cloud (gpt-oss-120b) / Gemini Fallback</text>
+    <text x="454" y="44" class="comp-sub">Coordinator &amp; Reasoner + Tavily Intelligence Web Search</text>
+  </g>
+</svg>
