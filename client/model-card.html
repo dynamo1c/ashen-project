@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Card &amp; Limitations — Ashen Protocol</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="main.css">
+<style>
+  .doc-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    color: var(--text-1);
+    line-height: 1.65;
+    font-size: 13px;
+  }
+  .doc-header {
+    border-bottom: 1px solid var(--border-hi);
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+  .doc-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    margin: 6px 0 4px;
+    color: var(--text-1);
+  }
+  .doc-back {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-2);
+    text-decoration: none;
+    border: 1px solid var(--border-hi);
+    border-radius: 3px;
+    padding: 4px 9px;
+  }
+  .doc-back:hover { background: var(--bg-raised); color: var(--text-1); }
+  .doc-section { margin: 30px 0; }
+  .doc-section h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-1);
+    border-left: 2px solid var(--danger);
+    padding-left: 10px;
+    margin-bottom: 12px;
+  }
+  .doc-section h3 { font-size: 12px; color: var(--text-1); margin: 16px 0 6px; }
+  .doc-section p, .doc-section li { color: var(--text-2); margin: 6px 0; }
+  .doc-section ul { padding-left: 20px; }
+  .banner {
+    border: 1px solid var(--danger-dim);
+    background: var(--danger-dim);
+    border-radius: 4px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: var(--text-1);
+    margin: 16px 0 0;
+  }
+  .banner strong { color: #E28080; }
+  .doc-note {
+    border: 1px solid var(--warning-dim);
+    background: var(--warning-dim);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-1);
+    margin: 10px 0;
+  }
+  .doc-note strong { color: #D9A544; }
+  table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 10px 0;
+  }
+  table.spec-table th, table.spec-table td {
+    border: 1px solid var(--border-hi);
+    padding: 6px 10px;
+    text-align: left;
+    color: var(--text-2);
+    vertical-align: top;
+  }
+  table.spec-table th { color: var(--text-1); background: var(--bg-surface); }
+  .doc-footer-nav {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .doc-footer-nav a { color: var(--text-2); text-decoration: none; }
+  .doc-footer-nav a:hover { color: var(--text-1); }
+</style>
+</head>
+<body style="background:var(--bg-base);">
+  <div class="doc-page">
+    <div class="doc-header">
+      <div class="doc-eyebrow">Ashen Protocol · KSP Datathon 2026</div>
+      <h1>Model Card &amp; Limitations</h1>
+      <p style="color:var(--text-3);margin:0;">What this system is, what it is not, and where it is weakest.</p>
+      <a class="doc-back" href="index.html">← BACK TO DASHBOARD</a>
+    </div>
+
+    <div class="banner">
+      <strong>Decision-support, not decision-making.</strong> Every score, flag, and match surfaced by Ashen Protocol — anomaly severity, recidivism risk level, MO similarity percentage, syndicate linkage — is an investigative prioritization signal for a human analyst to review, not a verdict. Nothing in this system determines guilt, authorizes an arrest, or should be cited as sole grounds for a stop, search, or charge. All outputs require human corroboration against case evidence before any operational action.
+    </div>
+
+    <div class="doc-section">
+      <h2>1. WHAT EACH MODEL ACTUALLY DOES</h2>
+      <table class="spec-table">
+        <tr><th>Feature</th><th>What it is</th><th>What it is not</th></tr>
+        <tr><td>Crime Anomaly Radar</td><td>A z-score threshold test against a historical monthly baseline per (district, crime type). See Methodology.</td><td>Not a cause-finder — it flags a statistical deviation, not why it happened.</td></tr>
+        <tr><td>Recidivism Matrix</td><td>Aggregate rate statistics over demographic cohorts (age/gender bands) using a fixed prior-offense threshold.</td><td>Not an individualized risk-assessment instrument and not validated against real Karnataka reoffending outcomes.</td></tr>
+        <tr><td>MO Similarity Matching</td><td>TF-IDF lexical similarity between free-text incident narratives.</td><td>Not semantic understanding, not evidence of shared authorship or a common offender.</td></tr>
+        <tr><td>District Risk Forecast</td><td>A 3-tier threshold classification (HIGH/MED/LOW) over an incident-count-derived score.</td><td>Not a trained predictive-policing model with validated forecast accuracy.</td></tr>
+        <tr><td>Strategic Briefing (Copilot)</td><td>An LLM (Cerebras gpt-oss-120b) summarizing the above signals into prose, with a static template fallback if the LLM call fails.</td><td>Not fact-checked against ground truth — LLM output can misstate or overstate figures it was given; always cross-check numbers against the source panel.</td></tr>
+      </table>
+    </div>
+
+    <div class="doc-section">
+      <h2>2. KNOWN LIMITATIONS OF THE CURRENT BUILD</h2>
+      <ul>
+        <li><strong>Anomaly baselines are a fixed demonstration dataset.</strong> The five anomalies shown are precomputed illustrative examples (see <code>anomaly_engine.js</code>), not a live rolling z-score recomputed against the datastore on every request. A production deployment needs a real multi-month rolling baseline per district/crime-type before this becomes a live detector.</li>
+        <li><strong>Recidivism risk scores are frequently synthetic.</strong> <code>base_risk_score</code> for any offender without a live datastore record is generated as <code>Math.random() * 85 + 10</code> at FIR-inject time or at demo-seed time — a placeholder, not an actuarial or ML-derived score. When the live offender count is below the 1,480-profile demo target, the remaining profiles shown in the Recidivism Matrix are entirely generated (see the <code>real_profile_count</code> field returned by <code>/api/analytics/recidivism</code> and the <em>SAMPLE DATA</em> badge on that panel).</li>
+        <li><strong>MO similarity is lexical, not semantic.</strong> Narratives describing the same MO in different words will under-match; narratives describing different MOs with incidentally overlapping phrasing will over-match. Treat a high match percentage as "worth a human read," not as confirmation.</li>
+        <li><strong>Cold-start instability.</strong> Districts or crime categories with few historical incidents produce unstable or undefined z-scores and thin comparison pools for MO matching — both models are weakest exactly where crime is rarest, which is the opposite of where over-confidence would be safe.</li>
+        <li><strong>Offline/local demo data is synthetic.</strong> Whenever the Zoho Catalyst datastore is unreachable (e.g. running via <code>node index.js</code> outside Catalyst, or a fresh unseeded environment), every analytics route falls back to generated sample data shaped like the real schema. The <em>SAMPLE DATA</em> badge introduced on every panel makes this state visible at a glance — if it is not showing, the panel is reading live data.</li>
+        <li><strong>LLM briefing is not independently verified.</strong> The Cerebras-generated strategic briefing can occasionally paraphrase or round figures inconsistently with the source panels. It is a synthesis aid, not a certified report.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h2>3. BIAS &amp; FALSE-POSITIVE BEHAVIOR</h2>
+      <p>The Recidivism Matrix groups offenders by age and gender bands (e.g. "Youth Male 18–25"). Demographic cohort statistics like these can encode or amplify existing bias in historical enforcement patterns if used to direct patrols, stops, or resource allocation at named individuals or communities. This tool reports <em>aggregate</em> cohort rates for strategic planning context only — it must never be used to justify individualized suspicion of a person based on their age or gender group membership.</p>
+      <p>False positives to expect in normal operation:</p>
+      <ul>
+        <li>An anomaly "CRITICAL surge" can reflect a genuine one-time event (a single large case, a reporting-drive, or a data-entry batch) rather than an emerging pattern.</li>
+        <li>A "100% MO match" reflects near-identical wording within the same crime category, not proof of a shared perpetrator — always open both source FIRs before acting.</li>
+        <li>A CRITICAL/HIGH recidivism-risk label on a synthetic (non-live) profile carries no real-world meaning — check the <em>SAMPLE DATA</em> badge first.</li>
+      </ul>
+    </div>
+
+    <div class="doc-section">
+      <h2>4. INTENDED USE</h2>
+      <p>Ashen Protocol is built as an investigative triage and situational-awareness dashboard for KSP analysts: to surface where to look next, not to conclude what happened. Every number on screen should be treated as a lead to verify against primary case records, not as a finding to cite on its own.</p>
+    </div>
+
+    <div class="doc-footer-nav">
+      <a href="index.html">← Dashboard</a>
+      <a href="methodology.html">← Methodology</a>
+    </div>
+  </div>
+</body>
+</html>

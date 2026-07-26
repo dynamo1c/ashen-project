@@ -268,6 +268,7 @@ app.get('/api/analytics/summary', async (req, res) => {
       'Other Violations': 70
     };
 
+    let usedLive = false;
     try {
       const catalystApp = catalyst.initialize(req, { scope: 'admin' });
       const firCountResult = await catalystApp.zcql().executeZCQLQuery("SELECT COUNT(fir_number) FROM FIR_Records");
@@ -293,10 +294,12 @@ app.get('/api/analytics/summary', async (req, res) => {
           else groupedCrimes['Other Violations'] += count;
         });
       }
+      usedLive = true;
     } catch (e) {
       console.log("[Notice] Using fallback summary metrics.");
     }
 
+    res.set('X-Data-Source', usedLive ? 'live' : 'mock');
     res.status(200).json({
       total_firs: totalFirs,
       total_offenders_tracked: totalOffenders,
@@ -312,32 +315,35 @@ app.get('/api/analytics/summary', async (req, res) => {
 app.get('/api/map/hotspots', async (req, res) => {
   try {
     let flatHotspots = [];
+    let usedLive = false;
     try {
       const catalystApp = catalyst.initialize(req, { scope: 'admin' });
       const district = req.query.district || 'all';
-      let query = district !== 'all' 
+      let query = district !== 'all'
         ? `SELECT fir_number, district, police_station, latitude, longitude, crime_head, incident_timestamp FROM FIR_Records WHERE district = '${district.replace(/'/g, "''")}' LIMIT 300`
         : `SELECT fir_number, district, police_station, latitude, longitude, crime_head, incident_timestamp FROM FIR_Records LIMIT 300`;
       const result = await catalystApp.zcql().executeZCQLQuery(query);
       flatHotspots = flattenResults(result);
+      usedLive = true;
     } catch (e) {
       console.log("[Notice] Using fallback hotspots data.");
     }
 
     if (flatHotspots.length === 0) {
+      usedLive = false;
       const districts = [
-        { name: 'Bengaluru Urban', lat: 12.9716, lon: 77.5946, station: 'Central PS' },
-        { name: 'Belagavi', lat: 15.8497, lon: 74.4977, station: 'Belagavi Town PS' },
-        { name: 'Hubballi-Dharwad', lat: 15.3647, lon: 75.1240, station: 'Hubballi Sub-Urban PS' },
-        { name: 'Mangaluru', lat: 12.9141, lon: 74.8560, station: 'Mangaluru North PS' },
-        { name: 'Mysuru', lat: 12.2958, lon: 76.6394, station: 'Lashkar PS' }
+        { name: 'Bengaluru Urban', code: 'BGU', lat: 12.9716, lon: 77.5946, station: 'Central PS' },
+        { name: 'Belagavi', code: 'BEL', lat: 15.8497, lon: 74.4977, station: 'Belagavi Town PS' },
+        { name: 'Hubballi-Dharwad', code: 'HBD', lat: 15.3647, lon: 75.1240, station: 'Hubballi Sub-Urban PS' },
+        { name: 'Mangaluru', code: 'MNG', lat: 12.9141, lon: 74.8560, station: 'Mangaluru North PS' },
+        { name: 'Mysuru', code: 'MYS', lat: 12.2958, lon: 76.6394, station: 'Lashkar PS' }
       ];
       const crimes = ['Property Theft', 'Cybercrime', 'Narcotics', 'Violent Homicide', 'Financial Fraud'];
 
       districts.forEach((d, idx) => {
         for (let i = 0; i < 6; i++) {
           flatHotspots.push({
-            fir_number: `KA-${d.name.slice(0,3).toUpperCase()}-2026-000${idx*6 + i + 1}`,
+            fir_number: `KA-${d.code}-2026-${String(idx*6 + i + 1).padStart(4, '0')}`,
             district: d.name,
             police_station: d.station,
             latitude: parseFloat((d.lat + (Math.random() - 0.5) * 0.04).toFixed(4)),
@@ -349,6 +355,7 @@ app.get('/api/map/hotspots', async (req, res) => {
       });
     }
 
+    res.set('X-Data-Source', usedLive ? 'live' : 'mock');
     res.status(200).json(flatHotspots);
   } catch (error) {
     console.error("[-] Error in GET /api/map/hotspots:", error);
@@ -356,6 +363,50 @@ app.get('/api/map/hotspots', async (req, res) => {
   }
 });
 
+
+// Deterministic PRNG (mulberry32) seeded from a string hash — used so the fallback
+// network graph below produces a DIFFERENT but STABLE result per FIR number (same
+// FIR always renders the same graph; different FIRs render genuinely different ones),
+// instead of one identical hardcoded story for every case.
+function hashStringToSeed(str) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+function mulberry32(seed) {
+  let a = seed >>> 0;
+  return function () {
+    a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const FIR_DISTRICT_PREFIX_MAP = {
+  BGU: 'Bengaluru Urban', BEN: 'Bengaluru Urban', BLR: 'Bengaluru Urban',
+  MYS: 'Mysuru',
+  HBD: 'Hubballi-Dharwad', HUB: 'Hubballi-Dharwad', DWD: 'Hubballi-Dharwad',
+  MNG: 'Mangaluru', MAN: 'Mangaluru', MLR: 'Mangaluru',
+  BEL: 'Belagavi'
+};
+
+const MOCK_NETWORK_LOCATIONS = {
+  'Bengaluru Urban': ['Koramangala PS Zone', 'Indiranagar PS Zone', 'HSR Layout PS Zone', 'Whitefield PS Zone'],
+  'Mysuru': ['Devaraja PS Zone', 'Narasimharaja PS Zone', 'Jayalakshmipuram PS Zone'],
+  'Hubballi-Dharwad': ['Hubballi Sub-Urban PS Zone', 'Dharwad Town PS Zone', 'Old Hubli PS Zone'],
+  'Mangaluru': ['Mangaluru North PS Zone', 'Bantwal PS Zone', 'Surathkal PS Zone'],
+  'Belagavi': ['Belagavi Town PS Zone', 'Tilakwadi PS Zone', 'Shahapur PS Zone']
+};
+
+const MOCK_SUSPECT_NAMES = [
+  'Imran Khan', 'Pradeep Naik', 'Sunil Gowda', 'Ramesh Kumar', 'Vijay Patil', 'Santhosh Rao',
+  'Anand Shetty', 'Deepak Hegde', 'Mohammed Ali', 'Karan Kulkarni', 'Praveen Bhat', 'Chetan Nayak',
+  'Manjunath Poojary', 'Suresh Babu', 'Ganesh Vijayan', 'Rajesh Reddy'
+];
 
 // 3. GET /api/network/graph — Multi-Hop Association Engine (1st, 2nd, 3rd Degree Links)
 app.get('/api/network/graph', async (req, res) => {
@@ -410,37 +461,63 @@ app.get('/api/network/graph', async (req, res) => {
     }
 
     if (!datastoreSuccess || nodesMap.size === 0) {
-      nodesMap.set(fir_number, { id: fir_number, label: fir_number, type: 'fir', degree: 1 });
-      nodesMap.set('OFF-001042', { id: 'OFF-001042', label: 'Imran Khan', type: 'suspect', degree: 1, age: 34, gender: 'MALE', base_risk_score: 85.0 });
-      nodesMap.set('OFF-001089', { id: 'OFF-001089', label: 'Pradeep Naik', type: 'suspect', degree: 1, age: 28, gender: 'MALE', base_risk_score: 92.0 });
-      nodesMap.set('LOC-KORAMANGALA', { id: 'LOC-KORAMANGALA', label: 'Koramangala PS Zone', type: 'location', degree: 1 });
+      const rng = mulberry32(hashStringToSeed(fir_number));
+      const prefixMatch = fir_number.match(/^KA-([A-Z]{2,3})-/);
+      const prefix = prefixMatch ? prefixMatch[1] : 'BGU';
+      const district = FIR_DISTRICT_PREFIX_MAP[prefix] || 'Bengaluru Urban';
+      const locPool = MOCK_NETWORK_LOCATIONS[district] || MOCK_NETWORK_LOCATIONS['Bengaluru Urban'];
+      const location = locPool[Math.floor(rng() * locPool.length)];
+      const locId = `LOC-${district.replace(/[^A-Za-z]/g, '').toUpperCase()}`;
 
-      addLink('OFF-001042', fir_number, 'co_offending', 1.5);
-      addLink('OFF-001089', fir_number, 'co_offending', 1.5);
-      addLink('LOC-KORAMANGALA', fir_number, 'location_proximity', 1);
+      const usedNames = new Set();
+      const pickName = () => {
+        let name, attempts = 0;
+        do {
+          name = MOCK_SUSPECT_NAMES[Math.floor(rng() * MOCK_SUSPECT_NAMES.length)];
+          attempts += 1;
+        } while (usedNames.has(name) && attempts < 20);
+        usedNames.add(name);
+        return name;
+      };
+      const randId = () => `OFF-${String(Math.floor(rng() * 900000) + 100000)}`;
+
+      nodesMap.set(fir_number, { id: fir_number, label: fir_number, type: 'fir', degree: 1 });
+
+      const suspect1Id = randId();
+      const suspect2Id = randId();
+      nodesMap.set(suspect1Id, { id: suspect1Id, label: pickName(), type: 'suspect', degree: 1, age: 22 + Math.floor(rng() * 30), gender: 'MALE', base_risk_score: parseFloat((60 + rng() * 35).toFixed(1)) });
+      nodesMap.set(suspect2Id, { id: suspect2Id, label: pickName(), type: 'suspect', degree: 1, age: 22 + Math.floor(rng() * 30), gender: 'MALE', base_risk_score: parseFloat((60 + rng() * 35).toFixed(1)) });
+      nodesMap.set(locId, { id: locId, label: location, type: 'location', degree: 1 });
+
+      addLink(suspect1Id, fir_number, 'co_offending', 1.5);
+      addLink(suspect2Id, fir_number, 'co_offending', 1.5);
+      addLink(locId, fir_number, 'location_proximity', 1);
 
       if (maxHopDepth >= 2) {
-        const secFir = 'KA-BGU-2023-080802';
+        const secFir = `KA-${prefix}-2025-${String(Math.floor(rng() * 900000) + 100000)}`;
+        const suspect3Id = randId();
         nodesMap.set(secFir, { id: secFir, label: secFir, type: 'fir', degree: 2 });
-        nodesMap.set('OFF-002155', { id: 'OFF-002155', label: 'Sunil Gowda', type: 'suspect', degree: 2, age: 39, gender: 'MALE', base_risk_score: 74.0 });
-        
-        addLink('OFF-001042', secFir, 'co_offending', 1);
-        addLink('OFF-002155', secFir, 'co_offending', 1);
-        addLink('OFF-001042', 'OFF-002155', 'shared_mo', 1, { dashed: true, mo_match_score: 91, mo_description: 'Cross-District MO Match (91% Similarity)' });
+        nodesMap.set(suspect3Id, { id: suspect3Id, label: pickName(), type: 'suspect', degree: 2, age: 25 + Math.floor(rng() * 25), gender: 'MALE', base_risk_score: parseFloat((55 + rng() * 35).toFixed(1)) });
+
+        addLink(suspect1Id, secFir, 'co_offending', 1);
+        addLink(suspect3Id, secFir, 'co_offending', 1);
+        const moScore = 70 + Math.floor(rng() * 29);
+        addLink(suspect1Id, suspect3Id, 'shared_mo', 1, { dashed: true, mo_match_score: moScore, mo_description: `Cross-District MO Match (${moScore}% Similarity)` });
       }
 
       if (maxHopDepth >= 3) {
-        const kingpinId = 'OFF-KINGPIN-01';
-        nodesMap.set(kingpinId, { id: kingpinId, label: 'Ramesh Kumar', type: 'suspect', degree: 3, age: 46, gender: 'MALE', base_risk_score: 98.0 });
-        const cellId = 'CELL-SYNDICATE-BGU';
+        const kingpinId = `OFF-KINGPIN-${Math.floor(rng() * 90) + 10}`;
+        nodesMap.set(kingpinId, { id: kingpinId, label: pickName(), type: 'suspect', degree: 3, age: 40 + Math.floor(rng() * 15), gender: 'MALE', base_risk_score: parseFloat((90 + rng() * 9).toFixed(1)) });
+        const cellId = `CELL-SYNDICATE-${prefix}`;
         nodesMap.set(cellId, { id: cellId, label: '👑 Organized Syndicate Cell', type: 'syndicate_cell', degree: 3 });
 
         addLink(kingpinId, cellId, 'syndicate_hierarchy', 2, { dashed: true });
-        addLink('OFF-001042', cellId, 'syndicate_link', 1, { dashed: true });
+        addLink(suspect1Id, cellId, 'syndicate_link', 1, { dashed: true });
       }
     }
 
     const nodes = Array.from(nodesMap.values());
+    res.set('X-Data-Source', (datastoreSuccess && nodesMap.size > 0) ? 'live' : 'mock');
     res.status(200).json({ nodes, links, hop_depth: maxHopDepth, total_nodes: nodes.length });
   } catch (error) {
     console.error("[-] Error in GET /api/network/graph:", error);
@@ -452,6 +529,7 @@ app.get('/api/network/graph', async (req, res) => {
 app.get('/api/predict/risk', async (req, res) => {
   try {
     let mapped = [];
+    let usedLive = false;
     try {
       const catalystApp = catalyst.initialize(req, { scope: 'admin' });
       const riskQuery = "SELECT district, statistical_month, statistical_year, base_incident_count, predicted_risk_level FROM District_Risk_Scores ORDER BY statistical_year DESC, statistical_month DESC LIMIT 5";
@@ -475,11 +553,13 @@ app.get('/api/predict/risk', async (req, res) => {
           risk: riskInfo
         };
       });
+      usedLive = true;
     } catch (e) {
       console.log("[Notice] Using fallback district risk forecast.");
     }
 
     if (mapped.length === 0) {
+      usedLive = false;
       const sampleDistricts = [
         { district: 'Bengaluru Urban', count: 48, level: 'HIGH' },
         { district: 'Belagavi', count: 32, level: 'HIGH' },
@@ -501,6 +581,7 @@ app.get('/api/predict/risk', async (req, res) => {
       });
     }
 
+    res.set('X-Data-Source', usedLive ? 'live' : 'mock');
     res.status(200).json(mapped);
   } catch (error) {
     console.error("[-] Error in GET /api/predict/risk:", error);
@@ -526,6 +607,7 @@ try {
 app.get('/api/analytics/anomalies', async (req, res) => {
   try {
     const anomalies = detectCrimeAnomalies([]);
+    res.set('X-Data-Source', 'mock');
     res.status(200).json({
       status: 'success',
       total_anomalies: anomalies.length,
@@ -640,6 +722,7 @@ Strategic profiling reveals a highly volatile cohort in the state:
 3. **COMPLAINT REGISTRY AUDIT:** Dispatch supervisory audit teams to Belagavi, Hubballi-Dharwad, and Mysuru police stations to review unregistered station diaries and check for report suppression.`;
     }
 
+    res.set('X-Data-Source', generatedReport && hasCerebras && generatedReport !== "" ? 'live' : 'mock');
     res.status(200).json({
       status: 'success',
       markdown: generatedReport
@@ -677,6 +760,8 @@ app.get('/api/analytics/recidivism', async (req, res) => {
     } catch (e) {
       console.log("[Notice] Using realistic statistical Recidivism dataset generator.");
     }
+
+    const realProfileCount = offenderProfiles.length;
 
     if (offenderProfiles.length < 1480) {
       const crimeTypes = ['Theft & Robbery', 'Cybercrime', 'Narcotics', 'Violent Crime', 'Financial Fraud'];
@@ -736,9 +821,11 @@ app.get('/api/analytics/recidivism', async (req, res) => {
     const calcRate = (arr) => arr.length ? Math.round((arr.filter(p => p.prior_offenses >= 2).length / arr.length) * 100) : 0;
     const calcAvgPriors = (arr) => arr.length ? (arr.reduce((s, p) => s + p.prior_offenses, 0) / arr.length).toFixed(1) : 0;
 
+    res.set('X-Data-Source', realProfileCount === 0 ? 'mock' : (realProfileCount >= offenderProfiles.length ? 'live' : 'mixed'));
     res.status(200).json({
       status: 'success',
       total_profiles: offenderProfiles.length,
+      real_profile_count: realProfileCount,
       cohort_summary: {
         youth_male_rate: `${calcRate(youthCohort)}%`,
         youth_male_avg_priors: calcAvgPriors(youthCohort),
@@ -817,6 +904,22 @@ function computeCosineSimilarity(tf1, tf2, idf) {
 }
 
 // GET /api/analytics/mo-matches
+// Maps whatever crime-category vocabulary the caller supplies (map/hotspots labels,
+// FIR-inject form categories, etc.) onto this engine's fixed MO narrative categories,
+// so the fallback simulation stays narratively consistent with the case being viewed
+// instead of picking an unrelated crime type at random.
+function mapToMoCategory(crimeHeadRaw, knownCategories) {
+  if (!crimeHeadRaw) return null;
+  if (knownCategories.includes(crimeHeadRaw)) return crimeHeadRaw;
+  const ch = crimeHeadRaw.toLowerCase();
+  if (/cyber|online|internet|computer|phishing|hack/.test(ch)) return 'Cybercrime';
+  if (/narcotic|drug|ndps|excise/.test(ch)) return 'Narcotics';
+  if (/murder|homicide|violent|assault|riot|hurt|kill/.test(ch)) return 'Violent Homicide';
+  if (/fraud|financial|cheating|forgery/.test(ch)) return 'Financial Fraud';
+  if (/theft|robbery|burglary|dacoity|property/.test(ch)) return 'Property Theft';
+  return null;
+}
+
 app.get('/api/analytics/mo-matches', async (req, res) => {
   try {
     const targetId = req.query.fir_number;
@@ -844,6 +947,9 @@ app.get('/api/analytics/mo-matches', async (req, res) => {
     } catch (dbErr) {
       console.log("[Notice] DB query in mo-matches failed, using fallbacks.");
     }
+
+    const dbTargetFound = !!targetCase;
+    const dbPoolCount = pool.length;
 
     // Step 2: Fallback simulation if DB did not yield case or failed
     const crimes = ['Property Theft', 'Cybercrime', 'Narcotics', 'Violent Homicide', 'Financial Fraud'];
@@ -888,8 +994,10 @@ app.get('/api/analytics/mo-matches', async (req, res) => {
     };
 
     if (!targetCase) {
-      // Simulate target case
-      const targetCrime = crimes[Math.floor(Math.random() * crimes.length)];
+      // Simulate target case — prefer the caller-supplied crime_head (from the case
+      // actually being viewed) over a random pick, so the narrative stays consistent.
+      const requestedCategory = mapToMoCategory(req.query.crime_head, crimes);
+      const targetCrime = requestedCategory || crimes[Math.floor(Math.random() * crimes.length)];
       const narratives = moNarratives[targetCrime] || moNarratives['Property Theft'];
       targetCase = {
         fir_number: targetId,
@@ -975,6 +1083,8 @@ app.get('/api/analytics/mo-matches', async (req, res) => {
       .sort((a, b) => b.similarity_score - a.similarity_score)
       .slice(0, 5);
 
+    const moDataSource = !dbTargetFound ? 'mock' : (dbPoolCount > 0 ? 'live' : 'mixed');
+    res.set('X-Data-Source', moDataSource);
     res.status(200).json({
       status: 'success',
       target_case: {
@@ -1108,6 +1218,7 @@ const STATEWIDE_SYNDICATES = [
 
 // GET /api/syndicates
 app.get('/api/syndicates', (req, res) => {
+  res.set('X-Data-Source', 'mock');
   res.status(200).json({
     status: 'success',
     total_syndicates: STATEWIDE_SYNDICATES.length,
@@ -1274,6 +1385,7 @@ app.get('/api/syndicates/:id', (req, res) => {
     });
   });
 
+  res.set('X-Data-Source', 'mock');
   res.status(200).json({
     status: 'success',
     syndicate,
@@ -1479,9 +1591,59 @@ app.all('/api/admin/integrate', async (req, res) => {
   }
 });
 
+// Validates the /api/fir/inject request body before it ever reaches injectFIRRecord/datastore write.
+function validateFirInjectPayload(body) {
+  const errors = [];
+  const VALID_DISTRICTS = ['Bengaluru Urban', 'Mysuru', 'Hubballi-Dharwad', 'Mangaluru', 'Belagavi'];
+  const VALID_GENDERS = ['MALE', 'FEMALE', 'TRANSGENDER'];
+
+  if (body.district !== undefined && body.district !== null && body.district !== '' && !VALID_DISTRICTS.includes(body.district)) {
+    errors.push(`district must be one of: ${VALID_DISTRICTS.join(', ')}`);
+  }
+  if (typeof body.police_station !== 'string' || body.police_station.trim().length === 0) {
+    errors.push('police_station is required and must be a non-empty string');
+  } else if (body.police_station.length > 150) {
+    errors.push('police_station must be under 150 characters');
+  }
+  if (typeof body.crime_head !== 'string' || body.crime_head.trim().length === 0) {
+    errors.push('crime_head is required and must be a non-empty string');
+  } else if (body.crime_head.length > 100) {
+    errors.push('crime_head must be under 100 characters');
+  }
+  if (typeof body.mo_description !== 'string' || body.mo_description.trim().length < 10) {
+    errors.push('mo_description is required and must be at least 10 characters');
+  } else if (body.mo_description.length > 5000) {
+    errors.push('mo_description must be under 5000 characters');
+  }
+  if (body.offender_name !== undefined && body.offender_name !== null && body.offender_name !== '') {
+    if (typeof body.offender_name !== 'string' || body.offender_name.trim().length === 0) {
+      errors.push('offender_name must be a non-empty string if provided');
+    } else if (body.offender_name.length > 150) {
+      errors.push('offender_name must be under 150 characters');
+    }
+    if (body.age !== undefined && body.age !== null && body.age !== '') {
+      const ageNum = Number(body.age);
+      if (!Number.isInteger(ageNum) || ageNum < 1 || ageNum > 120) {
+        errors.push('age must be an integer between 1 and 120');
+      }
+    }
+    if (body.gender !== undefined && body.gender !== null && body.gender !== '' && !VALID_GENDERS.includes(body.gender)) {
+      errors.push(`gender must be one of: ${VALID_GENDERS.join(', ')}`);
+    }
+  }
+  return errors;
+}
+
 // 6. POST /api/fir/inject
 app.post('/api/fir/inject', async (req, res) => {
   try {
+    if (!req.body || typeof req.body !== 'object' || Array.isArray(req.body)) {
+      return res.status(400).json({ error: 'Bad Request', details: 'Request body must be a JSON object' });
+    }
+    const validationErrors = validateFirInjectPayload(req.body);
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: 'Validation Failed', details: validationErrors });
+    }
     const catalystApp = catalyst.initialize(req, { scope: 'admin' });
     const result = await injectFIRRecord(catalystApp, req.body);
     res.status(200).json({
@@ -2935,7 +3097,12 @@ app.get('/api/debug/models', async (req, res) => {
 // Shared handler for GET and POST query endpoints
 async function handleQueryRequest(req, res, queryText, source = 'text') {
   try {
-    const catalystApp = catalyst.initialize(req, { scope: 'admin' });
+    let catalystApp = null;
+    try {
+      catalystApp = catalyst.initialize(req, { scope: 'admin' });
+    } catch (initErr) {
+      console.log("[Notice] Catalyst initialize failed in copilot query, continuing in DB-unavailable mode:", initErr.message);
+    }
     const q = queryText || '';
     const queryLower = q.toLowerCase();
 
@@ -2996,6 +3163,16 @@ async function handleQueryRequest(req, res, queryText, source = 'text') {
       if (fallbackReason) {
         warningPrefix = `⚠️ **Gemini API Execution Failed** (Running in rule-based fallback mode):\n*Error details: "${fallbackReason}"*\n\nPlease check your Gemini API key in settings or verify Google Cloud Console project permissions.\n\n`;
       }
+    }
+
+    // The rule-based fallback below (filing parser + keyword district/crime lookups) queries
+    // the datastore directly and has no per-call fallback of its own. If Catalyst never
+    // initialized, degrade gracefully here instead of letting a raw catalystApp.zcql() call
+    // throw and bubble up as a 500 "Failed to connect" error to the chat panel.
+    if (!catalystApp) {
+      return res.json({
+        response: warningPrefix + "⚠️ **Live database connection unavailable** — I can't run live queries against the KSP datastore right now. This is usually temporary (a local dev/emulation limitation); please try again shortly, or check the Dashboard/Map panels, which show a SAMPLE DATA badge whenever they're in the same fallback state."
+      });
     }
 
     // AI Natural Language Filing Parser (Fallback)
@@ -3186,13 +3363,39 @@ async function handleQueryRequest(req, res, queryText, source = 'text') {
   }
 }
 
+// Lightweight in-memory fixed-window rate limiter (no external dependency) to
+// stop a stray loop or a curious judge from draining the LLM quota mid-demo.
+const rateLimitBuckets = new Map();
+function rateLimit({ windowMs, max }) {
+  return (req, res, next) => {
+    const key = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+    const now = Date.now();
+    let bucket = rateLimitBuckets.get(key);
+    if (!bucket || now - bucket.windowStart >= windowMs) {
+      bucket = { count: 0, windowStart: now };
+      rateLimitBuckets.set(key, bucket);
+    }
+    bucket.count += 1;
+    if (bucket.count > max) {
+      const retryAfterSec = Math.ceil((bucket.windowStart + windowMs - now) / 1000);
+      res.set('Retry-After', String(retryAfterSec));
+      return res.status(429).json({
+        error: 'Too Many Requests',
+        details: `Rate limit exceeded (${max} requests per ${Math.round(windowMs / 60000)} min). Try again in ${retryAfterSec}s.`
+      });
+    }
+    next();
+  };
+}
+const llmQueryRateLimit = rateLimit({ windowMs: 5 * 60 * 1000, max: 20 });
+
 // AI database query endpoint (GET)
-app.get('/api/chat/query', async (req, res) => {
+app.get('/api/chat/query', llmQueryRateLimit, async (req, res) => {
   await handleQueryRequest(req, res, req.query.q, 'text');
 });
 
 // AI database query endpoint (POST for voice/copilot integration)
-app.post('/api/copilot/query', async (req, res) => {
+app.post('/api/copilot/query', llmQueryRateLimit, async (req, res) => {
   await handleQueryRequest(req, res, req.body.query, req.body.source || 'voice');
 });
 

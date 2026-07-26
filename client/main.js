@@ -1,6 +1,23 @@
 const API_BASE = (typeof window !== 'undefined' && window.location && window.location.origin && window.location.origin.startsWith('http')) ? window.location.origin : 'http://localhost:3000';
 // Production: replace with https://ashenprotocol-60073769947.development.catalystserverless.in
 
+// Reads the backend's X-Data-Source response header (live/mock/mixed) and toggles
+// a "SAMPLE DATA" badge next to the panel so judges can tell live vs fallback data apart.
+function setMockDataBadge(elId, response, opts = {}) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const source = response && response.headers ? response.headers.get('X-Data-Source') : null;
+  if (!source || source === 'live') {
+    el.style.display = 'none';
+    el.classList.remove('is-mixed');
+    return;
+  }
+  el.classList.toggle('is-mixed', source === 'mixed');
+  el.textContent = source === 'mixed'
+    ? (opts.mixedLabel || 'PARTIAL SAMPLE DATA')
+    : (opts.mockLabel || 'SAMPLE DATA');
+  el.style.display = 'inline-flex';
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   // --- DOM CACHE ---
@@ -270,6 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/summary`);
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
+      setMockDataBadge('hud-mock-badge', response);
 
       const total_firs = data.total_firs || 0;
       const total_suspects = data.total_offenders_tracked || data.total_suspects || 0;
@@ -995,7 +1013,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (searchInputEl) searchInputEl.addEventListener('input', applyStationCaseFilters);
 
   // --- LEVEL 3: DEEP CASE DOSSIER PAGE LOGIC ---
+  let _lastOpenedDossierFir = null;
+  let _dossierLoadInProgress = false;
+
   const openCaseDossierPage = async (firNumber) => {
+    // Prevent double-load: skip if already loading or viewing this same case
+    if (_dossierLoadInProgress && _lastOpenedDossierFir === firNumber) return;
+    _lastOpenedDossierFir = firNumber;
+    _dossierLoadInProgress = true;
+
     ashenActiveFir = firNumber;
     setActiveView('case-dossier', { updateUrl: false });
     navigateTo('/case/' + encodeURIComponent(firNumber));
@@ -1049,13 +1075,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Load automated behavioral MO similarity matches
-    loadBehavioralMOMatches(firNumber);
+    loadBehavioralMOMatches(firNumber, caseData.crime_head);
+
+    _dossierLoadInProgress = false;
 
     // Fetch suspect profiles & graph network data for this case
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/network/graph?fir_number=${encodeURIComponent(firNumber)}`);
       if (!response.ok) throw new Error('Network API Error');
       const graphData = await response.json();
+      setMockDataBadge('dossier-graph-mock-badge', response);
 
       // Populate Suspect List Cards
       const suspectListEl = document.getElementById('cd-suspects-list');
@@ -1097,40 +1126,16 @@ document.addEventListener('DOMContentLoaded', () => {
       renderDossierNetworkGraph(graphData.nodes || [], graphData.links || []);
 
     } catch (e) {
+      console.error('[-] Failed to load network graph for case dossier:', e);
       const suspectListEl = document.getElementById('cd-suspects-list');
       if (suspectListEl) {
-        suspectListEl.innerHTML = `
-          <div class="suspect-card" data-id="OFF-000102" data-name="Rajesh Kumar" data-age="29" data-gender="MALE" data-risk="82.5">
-            <div>
-              <div class="suspect-name">👤 Primary Suspect (Under Investigation)</div>
-              <div class="suspect-sub">Gender: MALE | Status: Active Warrant</div>
-            </div>
-            <div><span class="badge high">Risk: 82.5</span></div>
-          </div>
-        `;
-
-        suspectListEl.querySelectorAll('.suspect-card').forEach(card => {
-          card.addEventListener('click', () => {
-            openSuspectDossierPage({
-              id: 'OFF-000102',
-              label: 'Rajesh Kumar',
-              name: 'Rajesh Kumar',
-              age: 29,
-              gender: 'MALE',
-              base_risk_score: 82.5
-            });
-          });
-        });
+        suspectListEl.innerHTML = `<div style="color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:10px;">[ UNABLE TO LOAD SUSPECT/NETWORK DATA — connection to intelligence engine failed. Retry by reopening this case. ]</div>`;
       }
-      renderDossierNetworkGraph(
-        [
-          { id: firNumber, label: firNumber, type: 'fir' },
-          { id: 'OFF-000102', label: 'Rajesh Kumar', type: 'suspect', age: 29, gender: 'MALE', base_risk_score: 82.5 }
-        ],
-        [
-          { source: 'OFF-000102', target: firNumber, value: 1 }
-        ]
-      );
+      const graphContainer = document.getElementById('dossier-network-graph');
+      if (graphContainer) {
+        graphContainer.innerHTML = `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:10px;text-align:center;padding:12px;">[ NETWORK GRAPH UNAVAILABLE ]</div>`;
+      }
+      setMockDataBadge('dossier-graph-mock-badge', null);
     }
   };
 
@@ -1302,6 +1307,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (d.type === 'suspect') {
         openSuspectDossierModal(d);
       } else if (d.type === 'fir') {
+        // Prevent re-opening the same case dossier we're already viewing
+        if (currentCaseDossierData && currentCaseDossierData.fir_number === d.id) return;
         openCaseDossierPage(d.id);
       }
     });
@@ -1448,6 +1455,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(url);
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
+      setMockDataBadge('map-mock-badge', response);
 
       // Process and enrich hotspots with hour & police station
       rawHotspots = data.map((h, idx) => {
@@ -1492,10 +1500,20 @@ document.addEventListener('DOMContentLoaded', () => {
         map.setView([15.3173, 75.7139], 7);
       }
 
-      // Generate suggestions chips for network tracing
+      // Generate suggestions chips for network tracing.
+      // Prefer known-good curated FIRs (real multi-offender cases from the seed dataset,
+      // one per district) when they're present in the currently loaded hotspots — i.e.
+      // when running against the live datastore — so sample chips reliably trace into a
+      // rich co-offender network instead of a randomly-picked case that might have none.
       const chipsContainer = document.getElementById('suggestions-chips');
       if (chipsContainer && rawHotspots.length > 0) {
-        const selectedFirs = [];
+        const availableFirs = new Set(rawHotspots.map(h => h.fir_number));
+        const curatedGoodFirs = [
+          'KA-BGU-2025-065378', 'KA-MYS-2023-047636', 'KA-HBD-2025-028005',
+          'KA-MNG-2025-074580', 'KA-BEL-2025-039872'
+        ];
+        const selectedFirs = curatedGoodFirs.filter(f => availableFirs.has(f)).slice(0, 4);
+
         const attempts = Math.min(30, rawHotspots.length);
         const usedIndices = new Set();
         while (selectedFirs.length < 4 && usedIndices.size < attempts) {
@@ -1610,6 +1628,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/network/graph?fir_number=${encodeURIComponent(firNumber)}&hop_depth=${hopDepth}`);
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
+      setMockDataBadge('network-mock-badge', response);
 
       graphEl.innerHTML = '';
       const rect = graphEl.getBoundingClientRect();
@@ -1941,6 +1960,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/predict/risk`);
       if (!response.ok) throw new Error('API Error');
       const riskData = await response.json();
+      setMockDataBadge('risk-mock-badge', response);
 
       const sortedRisk = riskData.map(item => {
         return {
@@ -1959,6 +1979,11 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       riskTbody.innerHTML = '';
+      if (sortedRisk.length === 0) {
+        riskTbody.innerHTML = `<tr><td colspan="4" style="color:var(--text-4);text-align:center;font-family:'IBM Plex Mono',monospace;font-size:11px;">No district risk forecast data available</td></tr>`;
+        loadTrendChart();
+        return;
+      }
       sortedRisk.forEach(item => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -2335,14 +2360,21 @@ document.addEventListener('DOMContentLoaded', () => {
     if (briefingLoading) briefingLoading.style.display = 'flex';
     if (briefingContent) briefingContent.innerHTML = '';
 
+    let briefingResponseRef = null;
     fetch(`${API_BASE}/server/ashen_api/api/analytics/briefing`)
       .then(res => {
         if (!res.ok) throw new Error('Briefing request failed');
+        briefingResponseRef = res;
         return res.json();
       })
       .then(data => {
         briefingMarkdownRaw = (data && data.markdown) || '';
-        if (briefingContent) briefingContent.innerHTML = formatBriefingMarkdown(briefingMarkdownRaw);
+        setMockDataBadge('briefing-mock-badge', briefingResponseRef, { mockLabel: 'TEMPLATE FALLBACK' });
+        if (briefingContent) {
+          briefingContent.innerHTML = briefingMarkdownRaw
+            ? formatBriefingMarkdown(briefingMarkdownRaw)
+            : '<p style="color:var(--text-3);">[No briefing content was returned. Try generating again.]</p>';
+        }
       })
       .catch(err => {
         briefingMarkdownRaw = '';
@@ -2394,7 +2426,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const KARNATAKA_DISTRICTS = ['Bengaluru Urban', 'Mysuru', 'Hubballi-Dharwad', 'Mangaluru', 'Belagavi'];
   const VIEW_LABELS = {
     dashboard: 'Dashboard', map: 'GIS Map', network: 'Network Graph', alerts: 'Alerts',
-    recidivism: 'Recidivism Matrix', inject: 'Inject FIR', syndicates: 'Syndicates Dossier'
+    recidivism: 'Repeat Offenders Matrix', inject: 'Inject FIR', syndicates: 'Syndicates Dossier'
   };
 
   const cpOverlay = document.getElementById('command-palette-overlay');
@@ -2792,7 +2824,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   wireExportButton('export-risk-csv', document.getElementById('risk-table'), 'Ashen_District_Risk_Forecast');
   wireExportButton('export-station-csv', document.querySelector('.station-case-table'), 'Ashen_Station_Cases');
-  wireExportButton('export-recidivism-csv', document.querySelector('.recidivism-ledger-table'), 'Ashen_Recidivism_Matrix');
+  wireExportButton('export-recidivism-csv', document.querySelector('.recidivism-ledger-table'), 'Ashen_Repeat_Offenders_Matrix');
   wireExportButton('export-syndicate-csv', document.querySelector('.syndicate-members-table'), 'Ashen_Syndicate_Members');
 
 
@@ -2907,6 +2939,7 @@ document.addEventListener('DOMContentLoaded', () => {
         headers: headers
       })
         .then(res => {
+          if (res.status === 429) throw new Error('RATE_LIMITED');
           if (!res.ok) throw new Error('Query error');
           return res.json();
         })
@@ -2924,7 +2957,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typingEl.parentNode) {
             typingEl.parentNode.removeChild(typingEl);
           }
-          appendAIMessageWithTrace({ response: 'Error: Failed to connect to the database query agent.' });
+          const msg = err.message === 'RATE_LIMITED'
+            ? 'Rate limit reached — too many queries in a short window. Please wait a few minutes and try again.'
+            : 'Error: Failed to connect to the database query agent.';
+          appendAIMessageWithTrace({ response: msg });
         });
     };
 
@@ -3194,6 +3230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         body: JSON.stringify({ query: text, source: 'voice' })
       })
         .then(res => {
+          if (res.status === 429) throw new Error('RATE_LIMITED');
           if (!res.ok) throw new Error('Query error');
           return res.json();
         })
@@ -3201,7 +3238,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typingEl.parentNode) {
             typingEl.parentNode.removeChild(typingEl);
           }
-          
+
           // Refresh dashboard in case it was a filing command
           const checkLower = text.toLowerCase();
           const isFiling = ['file ', 'register ', 'inject ', 'report '].some(k => checkLower.includes(k)) && 
@@ -3223,7 +3260,10 @@ document.addEventListener('DOMContentLoaded', () => {
           if (typingEl.parentNode) {
             typingEl.parentNode.removeChild(typingEl);
           }
-          appendAIMessageWithTrace({ response: 'Error: Failed to connect to the database query agent.' });
+          const msg = err.message === 'RATE_LIMITED'
+            ? 'Rate limit reached — too many queries in a short window. Please wait a few minutes and try again.'
+            : 'Error: Failed to connect to the database query agent.';
+          appendAIMessageWithTrace({ response: msg });
         });
     };
   }
@@ -3355,8 +3395,12 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error('Failed to inject record');
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          const detailMsg = Array.isArray(data.details) ? data.details.join('; ') : (data.details || data.error || 'Failed to inject record');
+          throw new Error(detailMsg);
+        }
 
         if (data.success) {
           if (injectStatus) {
@@ -3566,6 +3610,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/anomalies`);
       if (!response.ok) throw new Error('API Anomaly Fetch Error');
       const data = await response.json();
+      setMockDataBadge('anomaly-mock-badge', response);
       allAnomalies = data.anomalies || [];
 
       // Update Summary Counts
@@ -3622,12 +3667,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadRecidivismMatrix = async () => {
     const loadingTbody = document.getElementById('recidivism-table-body');
     if (loadingTbody) {
-      loadingTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">LOADING RECIDIVISM PROFILES...</td></tr>`;
+      loadingTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">LOADING REPEAT-OFFENDER PROFILES...</td></tr>`;
     }
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/recidivism`);
       if (!response.ok) throw new Error('API Error');
       const data = await response.json();
+      setMockDataBadge('recidivism-mock-badge', response);
 
       recidivismProfiles = data.profiles || [];
 
@@ -3655,7 +3701,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const tbody = document.getElementById('recidivism-table-body');
       if (tbody) {
         tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;">
-          RECIDIVISM ENGINE UNAVAILABLE — unable to reach the analytics engine.
+          REPEAT-OFFENDER ENGINE UNAVAILABLE — unable to reach the analytics engine.
           <button id="recidivism-retry-btn" style="display:block;margin:8px auto 0;background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
         </td></tr>`;
         const retryBtn = document.getElementById('recidivism-retry-btn');
@@ -3890,16 +3936,22 @@ document.addEventListener('DOMContentLoaded', () => {
   // ==========================================================================
   // SECTION: AUTOMATED MODUS OPERANDI (MO) SIMILARITY SEARCH
   // ==========================================================================
-  const loadBehavioralMOMatches = async (firNumber) => {
+  const loadBehavioralMOMatches = async (firNumber, crimeHead) => {
     const tbody = document.getElementById('case-mo-matches-tbody');
     if (!tbody) return;
+
+    // Skip re-fetch if already loaded for this exact FIR
+    if (tbody.getAttribute('data-loaded-fir') === firNumber) return;
 
     tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-3); padding:12px;">[ COMPUTING SIMILARITY SIGNATURES... ]</td></tr>`;
 
     try {
-      const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/mo-matches?fir_number=${encodeURIComponent(firNumber)}`);
+      const crimeParam = crimeHead ? `&crime_head=${encodeURIComponent(crimeHead)}` : '';
+      const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/mo-matches?fir_number=${encodeURIComponent(firNumber)}${crimeParam}`);
       if (!response.ok) throw new Error('Failed to fetch MO matches');
       const data = await response.json();
+      setMockDataBadge('mo-matches-mock-badge', response);
+      tbody.setAttribute('data-loaded-fir', firNumber);
       const matches = data.matches || [];
 
       if (matches.length === 0) {
@@ -3968,6 +4020,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
       if (syndicates.length > 0) {
         await loadSyndicateDossier(syndicates[0].id, { replace: true });
+      } else {
+        selector.innerHTML = '<option value="">— NO SYNDICATES REGISTERED —</option>';
+        if (loadingMembersTbody) {
+          loadingMembersTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">No organized syndicate cells currently registered.</td></tr>`;
+        }
       }
     } catch (err) {
       console.error('[-] Error loading syndicates list:', err);
@@ -4099,6 +4156,121 @@ document.addEventListener('DOMContentLoaded', () => {
   const renderSyndicateHierarchyGraph = (nodes, links) => {
     renderDossierNetworkGraph(nodes, links, 'syn-hierarchy-graph', 'syn-hierarchy-tooltip');
   };
+
+  // --- SECTION: GUIDED TOUR MODE (Golden-Path Walkthrough) ---
+  // Follows the demo narrative: a Bengaluru Urban cybercrime hotspot, traced through the
+  // network graph to its case dossier, cross-checked against the anomaly radar, and
+  // summarized in a generated strategic briefing.
+  const GOLDEN_PATH_FIR = 'KA-BGU-2026-0002';
+  const TOUR_STEPS = [
+    {
+      title: 'Welcome to Ashen Protocol',
+      body: 'This guided tour walks one real investigative story end-to-end: a Bengaluru Urban cybercrime spike, traced through the network graph to a case dossier, then summarized in an AI strategic briefing.',
+      run: () => { setActiveView('dashboard'); activateNavItem('dashboard'); }
+    },
+    {
+      title: 'Step 1 — GIS Hotspot Map',
+      body: 'The map shows live incident density across Karnataka’s five monitored districts. We will zoom into Bengaluru Urban, where a cybercrime surge was flagged.',
+      run: () => { setActiveView('map'); activateNavItem('map'); loadHotspots('Bengaluru Urban'); }
+    },
+    {
+      title: 'Step 2 — Criminal Network Graph',
+      body: 'The standalone Network view lets you trace the co-offender web for any FIR by number, or jump in from one of the sample cases below.',
+      run: () => { setActiveView('network'); activateNavItem('network'); }
+    },
+    {
+      title: 'Step 3 — Case Dossier',
+      body: `Opening FIR ${GOLDEN_PATH_FIR} — a Cybercrime incident in Bengaluru Urban. Its suspect profiles and behavioral MO similarity matches load automatically.`,
+      run: () => { navigateTo('/case/' + encodeURIComponent(GOLDEN_PATH_FIR)); restoreFromHash(); }
+    },
+    {
+      title: 'Step 4 — Criminal Network & Syndicate Trace',
+      body: 'The right-hand panel reveals the co-offender network for this case — direct suspects, cross-case links, and at deeper hops, the organized syndicate cell behind them.',
+      run: () => highlightTourTarget('.dossier-right-col .dossier-card')
+    },
+    {
+      title: 'Step 5 — Syndicates Dossier',
+      body: 'The Syndicates Dossier profiles organized crime cells statewide — hierarchy, active warrants, and bail status for every tracked member.',
+      run: () => { setActiveView('syndicates'); activateNavItem('syndicates'); }
+    },
+    {
+      title: 'Step 6 — Anomaly Radar',
+      body: 'The Crime Anomaly Radar independently flagged this same Bengaluru Urban cybercrime spike as a statistically CRITICAL surge.',
+      run: () => { setActiveView('alerts'); activateNavItem('alerts'); }
+    },
+    {
+      title: 'Step 7 — Inject FIR Console',
+      body: 'Field officers can file a new FIR directly into the system here — district, station, offense category, and modus operandi, with optional suspect details.',
+      run: () => { setActiveView('inject'); activateNavItem('inject'); }
+    },
+    {
+      title: 'Step 8 — Strategic Briefing',
+      body: 'Finally, generate an AI-authored intelligence briefing that synthesizes the anomaly radar, district risk, and repeat-offender data into one actionable report.',
+      run: () => { setActiveView('alerts'); activateNavItem('alerts'); const btn = document.getElementById('generate-briefing-btn'); if (btn) btn.click(); }
+    },
+    {
+      title: 'Tour Complete',
+      body: 'You have toured every major section: Map → Network Graph → Case Dossier → Syndicates → Anomaly Radar → Inject FIR → Strategic Briefing. Explore freely, or press Ctrl+K anytime to jump to any view, case, or district.',
+      run: () => {}
+    }
+  ];
+
+  let tourStepIndex = 0;
+  const tourOverlayEl = document.getElementById('tour-overlay');
+  const tourStepLabelEl = document.getElementById('tour-step-label');
+  const tourTitleEl = document.getElementById('tour-title');
+  const tourBodyEl = document.getElementById('tour-body');
+  const tourPrevBtn = document.getElementById('tour-prev-btn');
+  const tourNextBtn = document.getElementById('tour-next-btn');
+  const tourExitBtn = document.getElementById('tour-exit-btn');
+  const btnStartTour = document.getElementById('btn-start-tour');
+  const tourProgressFillEl = document.getElementById('tour-progress-fill');
+  const tourProgressTrackEl = document.getElementById('tour-progress-track');
+
+  function highlightTourTarget(selector) {
+    document.querySelectorAll('.tour-highlight-pulse').forEach(el => el.classList.remove('tour-highlight-pulse'));
+    const target = document.querySelector(selector);
+    if (target) {
+      target.classList.add('tour-highlight-pulse');
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setTimeout(() => target.classList.remove('tour-highlight-pulse'), 2500);
+    }
+  }
+
+  function renderTourStep() {
+    const step = TOUR_STEPS[tourStepIndex];
+    if (!step) return;
+    if (tourStepLabelEl) tourStepLabelEl.textContent = `STEP ${tourStepIndex + 1} / ${TOUR_STEPS.length}`;
+    if (tourTitleEl) tourTitleEl.textContent = step.title;
+    if (tourBodyEl) tourBodyEl.textContent = step.body;
+    if (tourPrevBtn) tourPrevBtn.disabled = tourStepIndex === 0;
+    if (tourNextBtn) tourNextBtn.textContent = tourStepIndex === TOUR_STEPS.length - 1 ? 'FINISH' : 'NEXT →';
+    const progressPct = Math.round(((tourStepIndex + 1) / TOUR_STEPS.length) * 100);
+    if (tourProgressFillEl) tourProgressFillEl.style.width = `${progressPct}%`;
+    if (tourProgressTrackEl) tourProgressTrackEl.setAttribute('aria-valuenow', String(progressPct));
+    try { step.run(); } catch (e) { console.error('[-] Guided tour step failed:', e); }
+  }
+
+  function startTour() {
+    tourStepIndex = 0;
+    if (tourOverlayEl) tourOverlayEl.classList.add('active');
+    renderTourStep();
+  }
+
+  function exitTour() {
+    if (tourOverlayEl) tourOverlayEl.classList.remove('active');
+    document.querySelectorAll('.tour-highlight-pulse').forEach(el => el.classList.remove('tour-highlight-pulse'));
+  }
+
+  if (btnStartTour) btnStartTour.addEventListener('click', startTour);
+  if (tourExitBtn) tourExitBtn.addEventListener('click', exitTour);
+  if (tourPrevBtn) tourPrevBtn.addEventListener('click', () => {
+    if (tourStepIndex > 0) { tourStepIndex -= 1; renderTourStep(); }
+  });
+  if (tourNextBtn) tourNextBtn.addEventListener('click', () => {
+    if (tourStepIndex < TOUR_STEPS.length - 1) { tourStepIndex += 1; renderTourStep(); }
+    else exitTour();
+  });
 
   // --- HASH ROUTER: restore view state from URL on load / back-forward / manual edit ---
   const restoreFromHash = () => {

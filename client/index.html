@@ -6,10 +6,10 @@
   <title>Ashen Protocol · KSP Intelligence Platform</title>
   <link rel="stylesheet" href="fonts.css">
   <link rel="stylesheet" href="main.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+  <link rel="stylesheet" href="vendor/leaflet.markercluster/MarkerCluster.css">
+  <link rel="stylesheet" href="vendor/leaflet.markercluster/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="vendor/tabler-icons/tabler-icons.min.css">
   <!-- Google Identity Services SDK disabled — OAuth not in use -->
 </head>
 <body>
@@ -38,8 +38,8 @@
           <a class="nav-item" data-section="alerts" aria-label="Alerts">
             <i class="ti ti-bell"></i> Alerts
           </a>
-          <a class="nav-item" data-section="recidivism" aria-label="Recidivism Matrix">
-            <i class="ti ti-chart-bubble"></i> Recidivism
+          <a class="nav-item" data-section="recidivism" aria-label="Repeat Offenders Matrix">
+            <i class="ti ti-chart-bubble"></i> Repeat Offenders
           </a>
           <a class="nav-item" data-section="inject" aria-label="Inject FIR">
             <i class="ti ti-plus"></i> Inject FIR
@@ -50,6 +50,9 @@
           <a class="nav-item" data-section="watchlist" aria-label="Case Watchlist">
             <i class="ti ti-bookmark"></i> Watchlist <span id="watchlist-count-badge" class="nav-count-badge" style="display:none;">0</span>
           </a>
+          <button class="nav-tour-btn" id="btn-start-tour" type="button" aria-label="Start guided tour">
+            <i class="ti ti-route"></i> Guided Tour
+          </button>
 
         </nav>
         <span class="sidebar-section-label">Filters</span>
@@ -64,7 +67,7 @@
           <input class="filter-input" id="filter-crime" placeholder="Crime type..." aria-label="Filter by crime type">
           <input class="filter-input" id="filter-risk" placeholder="Risk level..." aria-label="Filter by risk level">
         </div>
-        <div class="sidebar-footer">ASHEN PROTOCOL · v1.0</div>
+        <div class="sidebar-footer">ASHEN PROTOCOL · v1.0<br><a href="methodology.html" class="sidebar-footer-link">Methodology</a> · <a href="model-card.html" class="sidebar-footer-link">Model Card</a></div>
       </aside>
 
       <!-- RESIZER: SIDEBAR VS MAIN AREA -->
@@ -91,12 +94,14 @@
             <div class="hud-val" id="hud-ganglinks">—</div>
             <div class="hud-label">Gang Links</div>
           </div>
+          <span id="hud-mock-badge" class="mock-data-badge" style="display:none;position:absolute;top:6px;right:8px;">SAMPLE DATA</span>
         </div>
 
         <!-- MAP AREA -->
         <div class="map-area" role="region" aria-label="GIS Hotspot Map">
           <div id="map"></div>
           <div class="map-overlay-label">KARNATAKA · LIVE HOTSPOT DENSITY</div>
+          <span id="map-mock-badge" class="mock-data-badge" style="display:none;position:absolute;top:10px;right:12px;z-index:500;">SAMPLE DATA</span>
           <div class="map-load-status" id="map-load-status" style="display:none;" role="status" aria-live="polite"></div>
           <div class="map-controls">
             <button class="map-btn active" data-layer="stations" title="Toggle 185 Police Station Badges">🏰 Stations</button>
@@ -124,6 +129,7 @@
             <div class="panel-header">
               <span>District Risk Forecast</span>
               <span style="display:flex;align-items:center;gap:8px;">
+                <span id="risk-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
                 <span class="panel-date" id="panel-date"></span>
                 <button class="btn-export-csv" id="export-risk-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
               </span>
@@ -174,6 +180,7 @@
 
             <div class="panel-header">
               <span>Criminal Network Graph</span>
+              <span id="network-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
             </div>
             <div class="network-input-row">
               <input
@@ -278,6 +285,7 @@
               </div>
               <div class="gotham-header-meta" style="display:flex;align-items:center;gap:8px;">
                 <span class="gotham-meta-badge" id="anomaly-count-badge">05 ACTIVE ANOMALIES</span>
+                <span id="anomaly-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
                 <button id="generate-briefing-btn" class="gotham-action-btn"><i class="ti ti-file-analytics"></i> GENERATE STRATEGIC BRIEFING</button>
               </div>
             </div>
@@ -324,10 +332,11 @@
             <div class="panel-header gotham-panel-header">
               <div class="gotham-title-group">
                 <span class="gotham-status-pulse">● ANALYTICS ENGINE ONLINE</span>
-                <span class="gotham-header-title">KARNATAKA DEMOGRAPHIC & RECIDIVISM PROPENSITY MATRIX</span>
+                <span class="gotham-header-title">KARNATAKA REPEAT-OFFENDER RISK MATRIX</span>
               </div>
               <div class="gotham-header-meta" style="display:flex;align-items:center;gap:8px;">
                 <span class="gotham-meta-badge" id="recidivism-count-badge">65 PROFILES ANALYZED</span>
+                <span id="recidivism-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
                 <button class="btn-export-csv" id="export-recidivism-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
               </div>
             </div>
@@ -557,7 +566,10 @@
                   <div class="dossier-card" id="case-mo-similarity-box" style="margin-top:12px;">
                     <div class="dossier-card-header" style="display:flex; justify-content:space-between; align-items:center;">
                       <span>AUTOMATED BEHAVIORAL MO SIMILARITY DETECTED</span>
-                      <span style="font-family:'IBM Plex Mono'; font-size:8px; color:var(--safe); border:1px solid var(--safe); padding:2px 5px; border-radius:2px; letter-spacing:0.04em;">TF-IDF ENGINE</span>
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <span id="mo-matches-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
+                        <span style="font-family:'IBM Plex Mono'; font-size:8px; color:var(--safe); border:1px solid var(--safe); padding:2px 5px; border-radius:2px; letter-spacing:0.04em;">TF-IDF ENGINE</span>
+                      </span>
                     </div>
                     <div class="suspect-cases-wrap" style="max-height:200px; overflow-y:auto;">
                       <table class="data-table" style="width:100%; font-size:9px;">
@@ -593,7 +605,10 @@
                   <div class="dossier-card full-height">
                     <div class="dossier-card-header">
                       <span>CRIMINAL NETWORK & SYNDICATE TRACE</span>
-                      <span class="panel-date">D3.JS GRAPH ENGINE</span>
+                      <span style="display:flex;align-items:center;gap:6px;">
+                        <span id="dossier-graph-mock-badge" class="mock-data-badge" style="display:none;">SAMPLE DATA</span>
+                        <span class="panel-date">D3.JS GRAPH ENGINE</span>
+                      </span>
                     </div>
                     <div class="dossier-graph-box">
                       <div id="dossier-network-graph"></div>
@@ -615,7 +630,7 @@
                 <span>OFFENDER INTELLIGENCE DOSSIER · <span id="od-offender-id">OFF-084003</span></span>
               </div>
               <div class="dossier-nav-btns">
-                <button class="btn-back" id="btn-back-to-recidivism">← BACK TO RECIDIVISM MATRIX</button>
+                <button class="btn-back" id="btn-back-to-recidivism">← BACK TO REPEAT OFFENDERS MATRIX</button>
               </div>
             </div>
 
@@ -658,7 +673,7 @@
                         <span class="meta-val" id="od-priors-val" style="color:#DC2626;font-weight:bold;">8 Convictions</span>
                       </div>
                       <div class="meta-item">
-                        <span class="meta-label">RECIDIVISM LEVEL</span>
+                        <span class="meta-label">REPEAT-OFFENSE RISK LEVEL</span>
                         <span class="meta-val" id="od-recid-level-val" style="color:#DC2626;font-weight:bold;">CRITICAL REOFFENDER</span>
                       </div>
                     </div>
@@ -666,7 +681,7 @@
                     <div class="mo-section" style="margin-top:12px;padding-top:12px;border-top:1px solid #1A1E2B;">
                       <div class="meta-label" style="margin-bottom:4px;">INTELLIGENCE PROFILING SUMMARY</div>
                       <div class="mo-text" id="od-profiling-text" style="font-family:'IBM Plex Mono';font-size:10px;color:#9CA3AF;line-height:1.5;">
-                        High-frequency repeat offender flagged by Karnataka predictive recidivism engine. Profile exhibits high risk score propensity with multiple cross-district offenses. Subject requires active surveillance and station-level patrol alerts.
+                        High-frequency repeat offender flagged by Karnataka's predictive repeat-offense risk engine. Profile exhibits high risk score propensity with multiple cross-district offenses. Subject requires active surveillance and station-level patrol alerts.
                       </div>
                     </div>
                   </div>
@@ -719,6 +734,7 @@
                 <span>STATEWIDE ORGANIZED CRIME DOSSIER · <span id="syn-dossier-id">SELECT SYNDICATE</span></span>
               </div>
               <div class="dossier-nav-btns" style="display: flex; gap: 8px; align-items: center;">
+                <span id="syndicate-mock-badge" class="mock-data-badge">SAMPLE DATA</span>
                 <span class="meta-label" style="margin-right: 4px;">ACTIVE CELL:</span>
                 <select id="syn-selector" style="background: #1C1E24; border: 1px solid #2E3340; border-radius: 4px; color: #C8CDD6; font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 4px 8px; outline: none; cursor: pointer;">
                   <!-- Options filled dynamically -->
@@ -860,7 +876,7 @@
             </div>
             <div class="suspect-status-row">
               <span class="badge high" id="sd-risk-badge">RISK SCORE: 82.5</span>
-              <span class="badge med" id="sd-recidivism-badge">RECIDIVISM RISK: HIGH</span>
+              <span class="badge med" id="sd-recidivism-badge">REPEAT-OFFENSE RISK: HIGH</span>
               <span class="badge low">STATUS: ACTIVE WARRANT</span>
             </div>
           </div>
@@ -962,6 +978,25 @@
     </div>
   </div>
 
+  <!-- GUIDED TOUR OVERLAY (Golden-Path Walkthrough) -->
+  <div id="tour-overlay" class="tour-overlay" role="dialog" aria-modal="false" aria-label="Guided tour">
+    <div class="tour-card">
+      <div class="tour-card-hdr">
+        <span class="tour-step-label" id="tour-step-label">STEP 1 / 7</span>
+        <button id="tour-exit-btn" class="tour-close-btn" aria-label="Exit guided tour">✕</button>
+      </div>
+      <div class="tour-progress-track" role="progressbar" aria-label="Tour progress" aria-valuemin="0" aria-valuemax="100" id="tour-progress-track">
+        <div class="tour-progress-fill" id="tour-progress-fill"></div>
+      </div>
+      <div class="tour-title" id="tour-title"></div>
+      <div class="tour-body" id="tour-body"></div>
+      <div class="tour-actions">
+        <button id="tour-prev-btn" class="tour-btn-secondary">← BACK</button>
+        <button id="tour-next-btn" class="tour-btn-primary">NEXT →</button>
+      </div>
+    </div>
+  </div>
+
   <!-- STRATEGIC BRIEFING MODAL -->
   <div id="briefing-modal" class="briefing-modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Strategic briefing">
     <div class="briefing-modal-card">
@@ -969,6 +1004,7 @@
         <div class="briefing-header-title">
           <i class="ti ti-file-analytics"></i> STATE CRIME RECORD BUREAU · STRATEGIC BRIEFING
         </div>
+        <span id="briefing-mock-badge" class="mock-data-badge" style="display:none;margin-right:8px;">TEMPLATE FALLBACK</span>
         <button id="close-briefing-modal" class="briefing-close-btn" aria-label="Close briefing modal">✕</button>
       </div>
       <div id="briefing-modal-body" class="briefing-modal-body">
@@ -987,11 +1023,11 @@
   </div>
 
   <!-- Scripts -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="vendor/leaflet/leaflet.js"></script>
+  <script src="vendor/leaflet.markercluster/leaflet.markercluster.js"></script>
+  <script src="vendor/leaflet/leaflet-heat.js"></script>
+  <script src="vendor/d3/d3.min.js"></script>
+  <script src="vendor/chartjs/chart.js"></script>
   <script src="voiceSearch.js"></script>
   <script src="main.js" defer></script>
 </body>

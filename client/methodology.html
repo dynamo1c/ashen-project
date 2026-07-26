@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Methodology — Ashen Protocol</title>
+<link rel="stylesheet" href="fonts.css">
+<link rel="stylesheet" href="main.css">
+<style>
+  .doc-page {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+    color: var(--text-1);
+    line-height: 1.65;
+    font-size: 13px;
+  }
+  .doc-header {
+    border-bottom: 1px solid var(--border-hi);
+    padding-bottom: 16px;
+    margin-bottom: 28px;
+  }
+  .doc-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    text-transform: uppercase;
+  }
+  .doc-header h1 {
+    font-size: 22px;
+    margin: 6px 0 4px;
+    color: var(--text-1);
+  }
+  .doc-back {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--text-2);
+    text-decoration: none;
+    border: 1px solid var(--border-hi);
+    border-radius: 3px;
+    padding: 4px 9px;
+  }
+  .doc-back:hover { background: var(--bg-raised); color: var(--text-1); }
+  .doc-section { margin: 30px 0; }
+  .doc-section h2 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--text-1);
+    border-left: 2px solid var(--safe);
+    padding-left: 10px;
+    margin-bottom: 12px;
+  }
+  .doc-section h3 {
+    font-size: 12px;
+    color: var(--text-1);
+    margin: 18px 0 8px;
+  }
+  .doc-section p { color: var(--text-2); margin: 8px 0; }
+  .formula-block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-hi);
+    border-radius: 4px;
+    padding: 14px 16px;
+    margin: 12px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12.5px;
+    color: var(--text-1);
+    overflow-x: auto;
+  }
+  .formula-block .var-line { color: var(--text-2); font-size: 11px; margin-top: 6px; }
+  .doc-note {
+    border: 1px solid var(--warning-dim);
+    background: var(--warning-dim);
+    border-radius: 4px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-1);
+    margin: 12px 0;
+  }
+  .doc-note strong { color: #D9A544; }
+  table.spec-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 10px 0;
+  }
+  table.spec-table th, table.spec-table td {
+    border: 1px solid var(--border-hi);
+    padding: 6px 10px;
+    text-align: left;
+    color: var(--text-2);
+  }
+  table.spec-table th { color: var(--text-1); background: var(--bg-surface); }
+  .doc-footer-nav {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+  }
+  .doc-footer-nav a { color: var(--text-2); text-decoration: none; }
+  .doc-footer-nav a:hover { color: var(--text-1); }
+</style>
+</head>
+<body style="background:var(--bg-base);">
+  <div class="doc-page">
+    <div class="doc-header">
+      <div class="doc-eyebrow">Ashen Protocol · KSP Datathon 2026</div>
+      <h1>Methodology</h1>
+      <p style="color:var(--text-3);margin:0;">How the anomaly, recidivism, and MO-similarity scores shown in the dashboard are computed.</p>
+      <a class="doc-back" href="index.html">← BACK TO DASHBOARD</a>
+    </div>
+
+    <div class="doc-section">
+      <h2>1. CRIME ANOMALY DETECTION — Z-SCORE MODEL</h2>
+      <p>The Crime Anomaly Radar flags a district/crime-type pair as anomalous when its current monthly incident count deviates sharply from its own historical baseline. The model is a standard z-score (standard-score) test:</p>
+      <div class="formula-block">
+        z = (x&nbsp;&minus;&nbsp;&mu;) / &sigma;
+        <div class="var-line">x — current month's incident count for a given (district, crime_head) pair</div>
+        <div class="var-line">&mu; — rolling historical monthly average for that same pair (baseline_monthly_avg)</div>
+        <div class="var-line">&sigma; — standard deviation of that pair's monthly counts over the baseline window</div>
+      </div>
+      <p>A pair is surfaced as an anomaly when <code>|z| &gt; 2.0</code> (roughly the top/bottom ~2.3% of a normal distribution — a conventional two-sigma significance threshold):</p>
+      <table class="spec-table">
+        <tr><th>Condition</th><th>Classification</th><th>Interpretation</th></tr>
+        <tr><td>z &ge; +2.0</td><td>ABNORMAL_SPIKE</td><td>Sudden surge — possible syndicate outbreak, new MO, or reporting-drive artifact</td></tr>
+        <tr><td>z &le; &minus;2.0</td><td>UNDERREPORTING_DROP</td><td>Sudden drop — possible FIR suppression, station-level under-registration</td></tr>
+        <tr><td>|z| &lt; 2.0</td><td>Not flagged</td><td>Within normal month-to-month variance</td></tr>
+      </table>
+      <p>Percentage change is reported alongside the z-score for interpretability: <code>percentage_change = (x &minus; &mu;) / &mu; &times; 100</code>.</p>
+      <div class="doc-note">
+        <strong>Current build status:</strong> the anomaly engine (<code>anomaly_engine.js</code>) ships with five illustrative district/crime-type baselines precomputed from the seed dataset, rather than a live rolling recomputation against the datastore on every request. The z-score formula above is what the model is designed around and what those five baselines were computed with — see the Model Card for the full disclosure on this limitation.
+      </div>
+    </div>
+
+    <div class="doc-section">
+      <h2>2. RECIDIVISM COHORT DEFINITION</h2>
+      <p>The Demographic &amp; Recidivism Propensity Matrix groups the offender population into four non-exclusive demographic cohorts and reports two statistics per cohort:</p>
+      <table class="spec-table">
+        <tr><th>Cohort</th><th>Definition</th></tr>
+        <tr><td>Youth High-Risk</td><td>gender = MALE and 18 &le; age &le; 25</td></tr>
+        <tr><td>Adult Serial</td><td>gender = MALE and 26 &le; age &le; 35</td></tr>
+        <tr><td>Female Cohort</td><td>gender = FEMALE</td></tr>
+        <tr><td>Senior Cohort</td><td>age &ge; 45</td></tr>
+      </table>
+      <div class="formula-block">
+        reoffending_rate(cohort) = count(members with prior_offenses &ge; 2) / count(cohort members) &times; 100
+        <div class="var-line" style="margin-top:10px;">avg_priors(cohort) = &Sigma; prior_offenses / count(cohort members)</div>
+      </div>
+      <p>A profile is counted as "recidivism-indicative" once it carries two or more prior offenses on record (<code>prior_offenses &ge; 2</code>) — this is a fixed threshold, not a learned classifier boundary. <code>recidivism_risk_level</code> per profile (CRITICAL / HIGH / MEDIUM) is derived from <code>base_risk_score</code> via the same three-tier threshold used platform-wide: &ge;70 HIGH-band, &ge;35 MED-band, else LOW-band (see <code>toRiskScored()</code> in <code>index.js</code>), with the top band relabeled CRITICAL specifically in the recidivism view for &gt;75.
+      </p>
+    </div>
+
+    <div class="doc-section">
+      <h2>3. MODUS OPERANDI SIMILARITY SCORING — TF-IDF WEIGHTED COSINE SIMILARITY</h2>
+      <p>The "Automated Behavioral MO Similarity" panel on each case dossier finds other FIRs whose free-text incident narrative reads similarly to the case being viewed. This is a lexical (term-frequency based) similarity engine, hand-implemented in <code>index.js</code> — <strong>not</strong> a neural/semantic embedding model. It runs in three steps:</p>
+      <h3>Step 1 — Tokenize</h3>
+      <p>Each MO narrative is lowercased, stripped of punctuation, split on whitespace, and filtered against a ~90-word English stop-word list, keeping only tokens longer than 2 characters.</p>
+      <h3>Step 2 — Term Frequency &times; Inverse Document Frequency</h3>
+      <div class="formula-block">
+        TF(t, d) = count(t in d) / |d|
+        <div class="var-line">IDF(t) = ln(N / df(t)) + 1.0</div>
+        <div class="var-line" style="margin-top:6px;">N — number of documents in the comparison pool (the target case + up to 100 same-category candidates)</div>
+        <div class="var-line">df(t) — number of documents in that pool containing term t</div>
+      </div>
+      <h3>Step 3 — Cosine Similarity</h3>
+      <div class="formula-block">
+        similarity(A, B) = (&Sigma; TFIDF_A(t) &middot; TFIDF_B(t)) / (&#8214;TFIDF_A&#8214; &middot; &#8214;TFIDF_B&#8214;)
+        <div class="var-line">where TFIDF(t) = TF(t, d) &times; IDF(t), and &#8214;v&#8214; is the Euclidean norm of vector v</div>
+      </div>
+      <p>Candidates are ranked by cosine similarity, filtered to <code>similarity_score &gt; 0.05</code>, and the top 5 are returned with their matched terms and a rounded <code>similarity_percent</code>. The comparison pool is scoped to FIRs sharing the same <code>crime_head</code> category as the target case, so a "100% match" reflects near-identical wording within that category — not a claim of certainty about shared authorship or a common perpetrator.</p>
+      <div class="doc-note">
+        <strong>Why "TF-IDF", not "semantic":</strong> this engine matches on shared vocabulary, not meaning — two narratives describing the same MO in different words will score lower than two narratives describing different MOs with overlapping phrasing. A semantic/embedding-based upgrade is a natural next iteration; the current engine is intentionally simple, dependency-free, and fully auditable — every score can be traced back to the exact matched terms shown in the UI.
+      </div>
+    </div>
+
+    <div class="doc-footer-nav">
+      <a href="index.html">← Dashboard</a>
+      <a href="model-card.html">Model Card &amp; Limitations →</a>
+    </div>
+  </div>
+</body>
+</html>

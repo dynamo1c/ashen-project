@@ -375,6 +375,16 @@ body.is-resizing {
   font-size: 8px;
   color: var(--text-5);
   letter-spacing: 0.1em;
+  line-height: 1.8;
+}
+
+.sidebar-footer-link {
+  color: var(--text-4);
+  text-decoration: none;
+}
+
+.sidebar-footer-link:hover {
+  color: var(--text-2);
 }
 
 .hud-strip {
@@ -931,6 +941,29 @@ body.is-resizing {
   font-weight: 600;
   letter-spacing: 0.08em;
   box-shadow: none !important;
+}
+
+.mock-data-badge {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 8px;
+  background: transparent;
+  color: #D97706;
+  border: 1px solid #D97706;
+  padding: 2px 6px;
+  border-radius: 2px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  box-shadow: none !important;
+}
+
+.mock-data-badge.is-mixed {
+  color: #2563EB;
+  border-color: #2563EB;
+}
+
+.hud-strip {
+  position: relative;
 }
 
 .anomaly-radar-content {
@@ -3353,6 +3386,146 @@ body.is-resizing {
   color: var(--text-4);
   font-family: 'IBM Plex Mono', monospace;
   font-size: 10px;
+}
+
+/* --- GUIDED TOUR (Golden-Path Walkthrough) --- */
+.nav-tour-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 11px;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  color: var(--safe, #3B9E6B);
+}
+
+.nav-tour-btn:hover {
+  background: var(--bg-raised);
+}
+
+.tour-overlay {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 10500;
+  display: none;
+}
+
+.tour-overlay.active {
+  display: block;
+}
+
+.tour-card {
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.tour-card-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.tour-step-label {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-4);
+}
+
+.tour-progress-track {
+  height: 3px;
+  background: var(--bg-raised);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.tour-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: var(--danger);
+  transition: width 0.25s ease;
+}
+
+.tour-close-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-3);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 2px 4px;
+}
+
+.tour-close-btn:hover {
+  color: var(--text-1);
+}
+
+.tour-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-1);
+  margin-bottom: 6px;
+}
+
+.tour-body {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-2);
+  margin-bottom: 12px;
+}
+
+.tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.tour-btn-secondary,
+.tour-btn-primary {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.tour-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--text-2);
+}
+
+.tour-btn-primary {
+  background: var(--safe, #3B9E6B);
+  border: 1px solid var(--safe, #3B9E6B);
+  color: #0C0E11;
+  font-weight: 600;
+}
+
+.tour-btn-secondary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.tour-highlight-pulse {
+  outline: 2px solid var(--safe, #3B9E6B);
+  outline-offset: 2px;
 }
 
 /* ==========================================================================
