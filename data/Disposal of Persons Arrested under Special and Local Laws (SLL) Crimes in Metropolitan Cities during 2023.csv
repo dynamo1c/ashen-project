@@ -1,0 +1,21 @@
+Sl. No.,City,Persons Arrested - Male - ( Col. 3),Persons Arrested - Female - ( Col. 4),Persons Arrested - Transgender - ( Col. 5),Persons Arrested - Total - ( Col. 6),Persons Charge sheeted - Male - ( Col. 7),Persons Charge sheeted - Female - ( Col. 8),Persons Charge sheeted - Transgender - ( Col. 9),Persons Charge sheeted - Total - ( Col. 10),Persons Convicted - Male - ( Col. 11),Persons Convicted - Female - ( Col. 12),Persons Convicted - Transgender - ( Col. 13),Persons Convicted - Total - ( Col. 14),Persons Discharged - Male - ( Col. 15),Persons Discharged - Female - ( Col. 16),Persons Discharged - Transgender - ( Col. 17),Persons Discharged - Total - ( Col. 18),Persons Acquitted - Male - ( Col. 19),Persons Acquitted - Female - ( Col. 20),Persons Acquitted - Transgender - ( Col. 21),Persons Acquitted - Total - ( Col. 22)
+1,Ahmedabad (Gujarat),26492,4455,0,30947,26629,4910,0,31539,28409,4256,0,32665,0,0,0,0,19410,888,0,20298
+2,Bengaluru (Karnataka),13229,1306,3,14538,16375,1025,3,17403,6562,30,0,6592,4,1,0,5,1613,300,0,1913
+3,Chennai (Tamil Nadu),20617,1594,1,22212,11978,1245,2,13225,28549,1096,1,29646,0,0,0,0,374,38,0,412
+4,Coimbatore (Tamil Nadu),4925,78,0,5003,4499,74,0,4573,6104,67,0,6171,0,0,0,0,729,26,0,755
+5,Delhi City,26814,1296,0,28110,24427,1741,0,26168,9388,205,0,9593,651,18,0,669,2439,131,0,2570
+6,Ghaziabad (Uttar Pradesh),1963,0,0,1963,2401,0,0,2401,347,6,0,353,0,0,0,0,141,0,0,141
+7,Hyderabad (Telangana),1438,96,0,1534,5500,118,0,5618,2939,5,0,2944,0,0,0,0,524,15,0,539
+8,Indore (Madhya Pradesh),894,38,1,933,7706,132,1,7839,5729,247,0,5976,1,0,0,1,732,33,0,765
+9,Jaipur (Rajasthan),9626,732,0,10358,9649,733,0,10382,5886,35,0,5921,100,2,0,102,114,5,0,119
+10,Kanpur (Uttar Pradesh),5328,0,0,5328,3092,0,0,3092,3531,0,0,3531,0,0,0,0,944,0,0,944
+11,Kochi (Kerala),43704,37,0,43741,43654,40,0,43694,28942,11,0,28953,0,0,0,0,3196,22,0,3218
+12,Kolkata (West Bengal),878,26,0,904,1528,11,0,1539,126,3,0,129,0,0,0,0,34,1,0,35
+13,Kozhikode (Kerala),4282,5,0,4287,8599,11,0,8610,6573,0,0,6573,14,0,0,14,154,1,0,155
+14,Lucknow (Uttar Pradesh),12754,0,0,12754,13424,5,0,13429,0,0,0,0,0,0,0,0,0,0,0,0
+15,Mumbai (Maharashtra),26921,652,0,27573,24128,487,0,24615,6352,58,0,6410,1993,9,0,2002,1686,27,0,1713
+16,Nagpur (Maharashtra),5404,383,0,5787,7421,673,1,8095,879,4,0,883,0,0,0,0,5836,608,0,6444
+17,Patna (Bihar),4902,210,0,5112,7004,0,0,7004,264,0,0,264,0,0,0,0,0,0,0,0
+18,Pune (Maharashtra),5160,123,0,5283,5508,83,0,5591,296,0,0,296,297,47,0,344,1016,17,0,1033
+19,Surat (Gujarat),50260,8041,0,58301,50260,8041,0,58301,18816,467,0,19283,2022,3,0,2025,2049,31,0,2080
+Total Cities,Total Cities,265591,19072,5,284668,273782,19329,7,293118,159692,6490,1,166183,5082,80,0,5162,40991,2143,0,43134

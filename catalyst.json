@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "source": "functions",
+    "targets": [
+      "ashen_api"
+    ]
+  },
+  "client": {
+    "source": "client"
+  }
+}

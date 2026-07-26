@@ -1,0 +1,30 @@
+{
+  "defaults": {
+    "project": 1,
+    "env": 1
+  },
+  "actives": {
+    "project": 1,
+    "env": 1
+  },
+  "projects": [
+    {
+      "idx": 1,
+      "id": "44908000000017001",
+      "name": "ashenprotocol",
+      "domain": {
+        "id": "50043004942",
+        "name": "ashenprotocol-60073769947.development"
+      },
+      "timezone": "Asia/Kolkata",
+      "env": [
+        {
+          "idx": 1,
+          "id": "60073769947",
+          "name": "Development",
+          "type": 3
+        }
+      ]
+    }
+  ]
+}

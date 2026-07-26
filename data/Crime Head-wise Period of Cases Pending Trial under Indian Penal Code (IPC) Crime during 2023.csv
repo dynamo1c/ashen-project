@@ -1,0 +1,63 @@
+Sl. No.,Crime Head,Cases Pending Trial - ( Col. 3),Period of Cases Pending Trial - 3 to 6 Months - ( Col. 4),Period of Cases Pending Trial - 6 to 12 Months - ( Col. 5),Period of Cases Pending Trial - 1 to 3 Yrs - ( Col. 6),Period of Cases Pending Trial - 3 to 5 Yrs - ( Col. 7),Period of Cases Pending Trial - 5 to 10 Yrs - ( Col. 8),Period of Cases Pending Trial - More than 10 Yrs - ( Col. 9)
+1,Murder,251849,23952,28081,86549,70685,33198,9384
+2,Culpable Homicide not amounting to Murder,26522,3036,3787,9784,6310,2907,698
+3,Causing Death by Negligence,819304,125170,143144,280362,182715,70804,17109
+4,Dowry Deaths,58225,9203,9427,20764,13102,4774,955
+5,Abetment of Suicide,46296,5533,6628,17390,11487,4327,931
+6,Attempt to Commit Murder,410349,56300,66070,130465,99125,46270,12119
+7,Attempt to commit Culpable Homicide,57722,7414,10256,22136,13209,3863,844
+8,Attempt to Commit Suicide,8999,1549,1070,2378,2023,1632,347
+9,"Miscarriage, Infanticide, Foeticide and Abandonment",2605,327,480,1007,589,169,33
+10,Hurt,3594688,502017,615694,1201554,853655,334749,87019
+11,Wrongful Restraint/Confinement,67841,11424,11711,24893,12709,5553,1551
+12,Assault on Women with Intent to Outrage her Modesty,533488,123239,87547,178867,104693,34236,4906
+13,Kidnapping and Abduction,329441,46465,55480,122919,72276,27530,4771
+14,Human Trafficking,6297,1117,1036,2389,1236,481,38
+15,Exploitation of Trafficked Person,780,136,151,273,170,45,5
+16,Selling of Minors for Prostitution,605,20,37,164,278,86,20
+17,Buying of Minors for Prostitution,174,2,4,43,62,63,0
+18,Rape,182163,26311,29480,67001,40547,16225,2599
+19,Attempt to Commit Rape,20681,3066,3170,7525,4836,1854,230
+20,Unnatural Offences,5991,812,1026,2555,1286,260,52
+Offences Affecting the Human Body (Total),Offences Affecting the Human Body (Total),6424020,947093,1074279,2179018,1490993,589026,143611
+21,Offences against State,643,37,40,185,164,128,89
+Offences against the State (Total),Offences against the State (Total),643,37,40,185,164,128,89
+22,Unlawful Assembly,56736,6199,8632,20291,14198,6601,815
+23,Riots,540320,56479,72982,187608,140482,68895,13874
+24,Offences promoting enmity between different groups,4853,507,901,1991,1071,344,39
+25,Affray,19304,3256,3747,7374,3653,1050,224
+Offences against Public Tranquillity (Total),Offences against Public Tranquillity (Total),621213,66441,86262,217264,159404,76890,14952
+26,Theft,1286784,175934,217958,449270,293262,119969,30391
+27,Burglary,385021,52016,54168,142601,93028,34673,8535
+28,Extortion & Blackmailing,51990,9641,7960,18959,10599,3959,872
+29,Robbery,211902,29496,24049,78842,51614,21965,5936
+30,Attempt to Commit Dacoity/Robbery,2759,363,450,1132,633,145,36
+31,Dacoity,37550,4407,3832,13571,10251,3887,1602
+32,Making Preparation and Assembly for committing Dacoity,36713,3677,4534,12497,10452,4646,907
+33,Criminal Misappropriation,1628,143,190,828,386,62,19
+34,Criminal Breach of Trust,154203,17288,18587,52231,41938,18860,5299
+35,Dishonestly Receiving/Dealing-in Stolen Property,47275,7034,9871,17471,9810,2596,493
+Offences against Property (Total),Offences against Property (Total),2215825,299999,341599,787402,521973,210762,54090
+36,Counterfeiting,9569,861,1060,3189,2763,1264,432
+37,"Forgery, Cheating & Fraud",633475,67227,92106,216891,156877,78668,21706
+Offences Relating to Documents & Property Marks (Total),Offences Relating to Documents & Property Marks (Total),643044,68088,93166,220080,159640,79932,22138
+38,Offences relating to Elections,7308,881,1330,2708,1781,537,71
+39,Disobedience to order duly promulgated by Public Servant,318283,40813,42146,154478,68203,10750,1893
+40,Harbouring an Offender,486,62,73,239,104,8,0
+41,Offences relating to Adulteration or Sale of Food/Drugs,4483,503,777,1728,1074,364,37
+42,Rash Driving on Public way,1375063,215260,246399,492074,303072,100091,18167
+43,Obstruction on Public way,186417,40182,36339,63135,39114,4885,2762
+44,Sale of obscene Books/Objects,1097,71,196,413,260,91,66
+45,Obscene Acts and Songs at Public Places,130645,14762,26289,54562,27944,6309,779
+46,Offences relating to Religion,7857,852,1257,3147,1991,543,67
+47,Cheating by Impersonation,2844,241,614,919,994,58,18
+48,Offences related to Mischief,14384,1501,2558,6204,3109,902,110
+49,Arson,51585,7961,6764,19111,12560,4225,964
+50,Criminal Trespass,192120,19080,26871,76388,45915,18739,5127
+51,Cruelty by Husband or his Relatives,818625,98658,118659,300540,200143,80605,20020
+52,Circulate False/Fake News/Rumours,2430,289,567,1063,420,74,17
+53,Criminal Intimidation,578224,142542,99674,193294,102437,35108,5169
+54,Insult to the Modesty of Women,50157,8415,7899,18374,10701,3935,833
+Miscellaneous IPC Crimes (Total),Miscellaneous IPC Crimes (Total),3742008,592073,618412,1388377,819822,267224,56100
+55,Other IPC crimes,2233297,291414,302335,793748,490833,285052,69915
+Total Cognizable IPC crimes,Total Cognizable IPC crimes,15880050,2265145,2516093,5586074,3642829,1509014,360895

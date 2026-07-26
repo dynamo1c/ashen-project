@@ -1,0 +1,181 @@
+district,year_month,incident_count
+Belagavi,2023-01-01,212
+Belagavi,2023-02-01,199
+Belagavi,2023-03-01,208
+Belagavi,2023-04-01,229
+Belagavi,2023-05-01,225
+Belagavi,2023-06-01,193
+Belagavi,2023-07-01,190
+Belagavi,2023-08-01,189
+Belagavi,2023-09-01,193
+Belagavi,2023-10-01,215
+Belagavi,2023-11-01,196
+Belagavi,2023-12-01,151
+Belagavi,2024-01-01,203
+Belagavi,2024-02-01,182
+Belagavi,2024-03-01,187
+Belagavi,2024-04-01,208
+Belagavi,2024-05-01,212
+Belagavi,2024-06-01,189
+Belagavi,2024-07-01,170
+Belagavi,2024-08-01,171
+Belagavi,2024-09-01,198
+Belagavi,2024-10-01,203
+Belagavi,2024-11-01,192
+Belagavi,2024-12-01,202
+Belagavi,2025-01-01,345
+Belagavi,2025-02-01,187
+Belagavi,2025-03-01,183
+Belagavi,2025-04-01,207
+Belagavi,2025-05-01,207
+Belagavi,2025-06-01,179
+Belagavi,2025-07-01,166
+Belagavi,2025-08-01,181
+Belagavi,2025-09-01,182
+Belagavi,2025-10-01,190
+Belagavi,2025-11-01,190
+Belagavi,2025-12-01,195
+Bengaluru Urban,2023-01-01,962
+Bengaluru Urban,2023-02-01,870
+Bengaluru Urban,2023-03-01,911
+Bengaluru Urban,2023-04-01,1037
+Bengaluru Urban,2023-05-01,1100
+Bengaluru Urban,2023-06-01,933
+Bengaluru Urban,2023-07-01,872
+Bengaluru Urban,2023-08-01,892
+Bengaluru Urban,2023-09-01,922
+Bengaluru Urban,2023-10-01,1027
+Bengaluru Urban,2023-11-01,1473
+Bengaluru Urban,2023-12-01,1137
+Bengaluru Urban,2024-01-01,1039
+Bengaluru Urban,2024-02-01,941
+Bengaluru Urban,2024-03-01,1030
+Bengaluru Urban,2024-04-01,1095
+Bengaluru Urban,2024-05-01,1132
+Bengaluru Urban,2024-06-01,1014
+Bengaluru Urban,2024-07-01,968
+Bengaluru Urban,2024-08-01,992
+Bengaluru Urban,2024-09-01,1008
+Bengaluru Urban,2024-10-01,1114
+Bengaluru Urban,2024-11-01,1077
+Bengaluru Urban,2024-12-01,1214
+Bengaluru Urban,2025-01-01,1084
+Bengaluru Urban,2025-02-01,1057
+Bengaluru Urban,2025-03-01,1054
+Bengaluru Urban,2025-04-01,1141
+Bengaluru Urban,2025-05-01,822
+Bengaluru Urban,2025-06-01,1107
+Bengaluru Urban,2025-07-01,1000
+Bengaluru Urban,2025-08-01,1061
+Bengaluru Urban,2025-09-01,1115
+Bengaluru Urban,2025-10-01,1176
+Bengaluru Urban,2025-11-01,1150
+Bengaluru Urban,2025-12-01,1316
+Hubballi-Dharwad,2023-01-01,320
+Hubballi-Dharwad,2023-02-01,322
+Hubballi-Dharwad,2023-03-01,289
+Hubballi-Dharwad,2023-04-01,347
+Hubballi-Dharwad,2023-05-01,352
+Hubballi-Dharwad,2023-06-01,298
+Hubballi-Dharwad,2023-07-01,283
+Hubballi-Dharwad,2023-08-01,271
+Hubballi-Dharwad,2023-09-01,305
+Hubballi-Dharwad,2023-10-01,336
+Hubballi-Dharwad,2023-11-01,328
+Hubballi-Dharwad,2023-12-01,340
+Hubballi-Dharwad,2024-01-01,312
+Hubballi-Dharwad,2024-02-01,303
+Hubballi-Dharwad,2024-03-01,564
+Hubballi-Dharwad,2024-04-01,342
+Hubballi-Dharwad,2024-05-01,346
+Hubballi-Dharwad,2024-06-01,306
+Hubballi-Dharwad,2024-07-01,283
+Hubballi-Dharwad,2024-08-01,297
+Hubballi-Dharwad,2024-09-01,301
+Hubballi-Dharwad,2024-10-01,329
+Hubballi-Dharwad,2024-11-01,310
+Hubballi-Dharwad,2024-12-01,330
+Hubballi-Dharwad,2025-01-01,323
+Hubballi-Dharwad,2025-02-01,310
+Hubballi-Dharwad,2025-03-01,314
+Hubballi-Dharwad,2025-04-01,336
+Hubballi-Dharwad,2025-05-01,336
+Hubballi-Dharwad,2025-06-01,297
+Hubballi-Dharwad,2025-07-01,279
+Hubballi-Dharwad,2025-08-01,282
+Hubballi-Dharwad,2025-09-01,474
+Hubballi-Dharwad,2025-10-01,337
+Hubballi-Dharwad,2025-11-01,331
+Hubballi-Dharwad,2025-12-01,347
+Mangaluru,2023-01-01,326
+Mangaluru,2023-02-01,309
+Mangaluru,2023-03-01,296
+Mangaluru,2023-04-01,338
+Mangaluru,2023-05-01,350
+Mangaluru,2023-06-01,320
+Mangaluru,2023-07-01,470
+Mangaluru,2023-08-01,286
+Mangaluru,2023-09-01,300
+Mangaluru,2023-10-01,312
+Mangaluru,2023-11-01,314
+Mangaluru,2023-12-01,340
+Mangaluru,2024-01-01,314
+Mangaluru,2024-02-01,286
+Mangaluru,2024-03-01,311
+Mangaluru,2024-04-01,307
+Mangaluru,2024-05-01,337
+Mangaluru,2024-06-01,301
+Mangaluru,2024-07-01,256
+Mangaluru,2024-08-01,264
+Mangaluru,2024-09-01,285
+Mangaluru,2024-10-01,301
+Mangaluru,2024-11-01,274
+Mangaluru,2024-12-01,315
+Mangaluru,2025-01-01,281
+Mangaluru,2025-02-01,281
+Mangaluru,2025-03-01,274
+Mangaluru,2025-04-01,317
+Mangaluru,2025-05-01,305
+Mangaluru,2025-06-01,264
+Mangaluru,2025-07-01,255
+Mangaluru,2025-08-01,244
+Mangaluru,2025-09-01,270
+Mangaluru,2025-10-01,300
+Mangaluru,2025-11-01,258
+Mangaluru,2025-12-01,298
+Mysuru,2023-01-01,319
+Mysuru,2023-02-01,312
+Mysuru,2023-03-01,301
+Mysuru,2023-04-01,325
+Mysuru,2023-05-01,358
+Mysuru,2023-06-01,306
+Mysuru,2023-07-01,287
+Mysuru,2023-08-01,295
+Mysuru,2023-09-01,306
+Mysuru,2023-10-01,341
+Mysuru,2023-11-01,324
+Mysuru,2023-12-01,347
+Mysuru,2024-01-01,348
+Mysuru,2024-02-01,322
+Mysuru,2024-03-01,314
+Mysuru,2024-04-01,359
+Mysuru,2024-05-01,356
+Mysuru,2024-06-01,323
+Mysuru,2024-07-01,307
+Mysuru,2024-08-01,297
+Mysuru,2024-09-01,334
+Mysuru,2024-10-01,571
+Mysuru,2024-11-01,342
+Mysuru,2024-12-01,389
+Mysuru,2025-01-01,340
+Mysuru,2025-02-01,323
+Mysuru,2025-03-01,329
+Mysuru,2025-04-01,357
+Mysuru,2025-05-01,380
+Mysuru,2025-06-01,331
+Mysuru,2025-07-01,311
+Mysuru,2025-08-01,324
+Mysuru,2025-09-01,338
+Mysuru,2025-10-01,382
+Mysuru,2025-11-01,344
+Mysuru,2025-12-01,414

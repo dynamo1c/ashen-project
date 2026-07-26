@@ -1,0 +1,12 @@
+{
+  "name": "ashen-project",
+  "version": "1.0.0",
+  "description": "Ashen Protocol - KSP Datathon 2026 Intelligence Dashboard",
+  "main": "functions/ashen_api/index.js",
+  "scripts": {
+    "postinstall": "cd functions/ashen_api && npm install",
+    "start": "cd functions/ashen_api && node --no-deprecation index.js",
+    "dev": "cd functions/ashen_api && node --no-deprecation index.js",
+    "catalyst": "catalyst serve"
+  }
+}

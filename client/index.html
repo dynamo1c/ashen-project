@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ashen Protocol · KSP Intelligence Platform</title>
+  <link rel="stylesheet" href="fonts.css">
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <!-- TOPBAR -->
+    <header class="topbar">
+      <span class="logo-text">ASHEN / PROTOCOL · KSP INTELLIGENCE PLATFORM</span>
+      <span id="live-clock" aria-live="polite">--:--:--</span>
+    </header>
+
+    <div class="app-body">
+
+      <!-- SIDEBAR -->
+      <aside class="sidebar">
+        <nav class="sidebar-nav">
+          <a class="nav-item active" data-section="dashboard" aria-label="Dashboard">
+            <i class="ti ti-layout-dashboard"></i> Dashboard
+          </a>
+          <a class="nav-item" data-section="map" aria-label="GIS Map">
+            <i class="ti ti-map"></i> GIS Map
+          </a>
+          <a class="nav-item" data-section="network" aria-label="Network Graph">
+            <i class="ti ti-chart-dots"></i> Network
+          </a>
+          <a class="nav-item" data-section="alerts" aria-label="Alerts">
+            <i class="ti ti-bell"></i> Alerts
+          </a>
+          <a class="nav-item" data-section="inject" aria-label="Inject FIR">
+            <i class="ti ti-plus"></i> Inject FIR
+          </a>
+        </nav>
+        <span class="sidebar-section-label">Filters</span>
+        <div class="sidebar-filter-group">
+          <input class="filter-input" id="filter-district" placeholder="District..." aria-label="Filter by district">
+          <select class="filter-input" id="filter-zone" aria-label="Filter by police zone">
+            <option value="all">All Administrative Zones</option>
+          </select>
+          <select class="filter-input" id="filter-station" aria-label="Filter by police station">
+            <option value="all">All Police Stations (185)</option>
+          </select>
+          <input class="filter-input" id="filter-crime" placeholder="Crime type..." aria-label="Filter by crime type">
+          <input class="filter-input" id="filter-risk" placeholder="Risk level..." aria-label="Filter by risk level">
+        </div>
+        <div class="sidebar-footer">ASHEN PROTOCOL · v1.0</div>
+      </aside>
+
+      <!-- RESIZER: SIDEBAR VS MAIN AREA -->
+      <div class="resizer resizer-v" id="resizer-sidebar" title="Drag to resize Sidebar"></div>
+
+      <!-- MAIN AREA -->
+      <main class="main-area">
+
+        <!-- HUD STRIP -->
+        <div class="hud-strip" role="region" aria-label="Summary statistics">
+          <div class="hud-card">
+            <div class="hud-val" id="hud-firs">—</div>
+            <div class="hud-label">Total FIRs</div>
+          </div>
+          <div class="hud-card">
+            <div class="hud-val" id="hud-suspects">—</div>
+            <div class="hud-label">Suspects</div>
+          </div>
+          <div class="hud-card">
+            <div class="hud-val danger" id="hud-highrisk">—</div>
+            <div class="hud-label">High Risk Districts</div>
+          </div>
+          <div class="hud-card">
+            <div class="hud-val" id="hud-ganglinks">—</div>
+            <div class="hud-label">Gang Links</div>
+          </div>
+        </div>
+
+        <!-- MAP AREA -->
+        <div class="map-area" role="region" aria-label="GIS Hotspot Map">
+          <div id="map"></div>
+          <div class="map-overlay-label">KARNATAKA · LIVE HOTSPOT DENSITY</div>
+          <div class="map-controls">
+            <button class="map-btn active" data-layer="stations" title="Toggle 185 Police Station Badges">🏰 Stations</button>
+            <button class="map-btn active" data-layer="incidents" title="Toggle Crime Incident Scene Dots">📍 Incidents</button>
+            <button class="map-btn" data-layer="heatmap" title="Toggle Density Heatmap">Heatmap</button>
+            <button class="map-btn" data-layer="clusters" title="Toggle Clustered View">Clusters</button>
+            <button class="map-btn" data-layer="districts" title="Zoom to District Bounds">Districts</button>
+          </div>
+        </div>
+
+        <!-- RESIZER: MAP VS BOTTOM ROW -->
+        <div class="resizer resizer-h" id="resizer-map" title="Drag to resize Map Height"></div>
+
+        <!-- BOTTOM ROW -->
+        <div class="bottom-row">
+
+          <!-- RISK TABLE PANEL -->
+          <div class="panel risk-panel">
+            <div class="panel-header">
+              <span>District Risk Forecast</span>
+              <span class="panel-date" id="panel-date"></span>
+            </div>
+            <div class="risk-table-wrap">
+              <table class="data-table" id="risk-table">
+                <thead>
+                  <tr>
+                    <th>District</th>
+                    <th>Crime Type</th>
+                    <th>Risk</th>
+                    <th>Score</th>
+                  </tr>
+                </thead>
+                <tbody id="risk-tbody"></tbody>
+              </table>
+            </div>
+
+            <!-- RESIZER: RISK TABLE VS TREND CHART -->
+            <div class="resizer resizer-h" id="resizer-risk-panel" title="Drag to resize Table vs Chart"></div>
+
+            <!-- CRIME TREND & FORECAST PANEL -->
+            <div class="trend-panel-container">
+              <div class="panel-header trend-header">
+                <div class="trend-title-block">
+                  <span>Monthly Crime Trend & 3-Month Forecast</span>
+                </div>
+                <div class="trend-filter-chips" id="trend-district-chips">
+                  <button class="trend-chip active" data-district="all">All Karnataka</button>
+                  <button class="trend-chip" data-district="Bengaluru Urban">Bengaluru</button>
+                  <button class="trend-chip" data-district="Mysuru">Mysuru</button>
+                  <button class="trend-chip" data-district="Hubballi-Dharwad">Hubballi</button>
+                  <button class="trend-chip" data-district="Mangaluru">Mangaluru</button>
+                  <button class="trend-chip" data-district="Belagavi">Belagavi</button>
+                </div>
+              </div>
+              <div class="trend-chart-wrap">
+                <canvas id="district-trend-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <!-- RESIZER: RISK PANEL VS NETWORK PANEL -->
+          <div class="resizer resizer-v" id="resizer-bottom-row" title="Drag to resize Panels"></div>
+
+          <!-- NETWORK PANEL -->
+          <div class="panel network-panel">
+
+            <div class="panel-header">
+              <span>Criminal Network Graph</span>
+            </div>
+            <div class="network-input-row">
+              <input
+                id="fir-input"
+                placeholder="Enter FIR number — e.g. KA-BGU-2023-000002"
+                aria-label="FIR number for network trace"
+              >
+              <button id="trace-btn" aria-label="Trace network for entered FIR">TRACE →</button>
+            </div>
+            <div class="network-suggestions-row" id="network-suggestions">
+              <span class="suggestions-label">SAMPLE CASES:</span>
+              <div class="chips-container" id="suggestions-chips">
+                <span class="fir-chip-placeholder">loading cases...</span>
+              </div>
+            </div>
+            <div class="network-toolbar-row">
+              <span class="toolbar-label">ASSOCIATION DEPTH:</span>
+              <div class="hop-btns-container">
+                <button class="hop-btn" data-depth="1" title="1st Hop: Direct Incident Co-offenders">1st Hop (Direct)</button>
+                <button class="hop-btn active" data-depth="2" title="2nd Hop: Secondary Co-offending Connections">2nd Hop (Cross-Case)</button>
+                <button class="hop-btn" data-depth="3" title="3rd Hop: Syndicate Leaders & Cross-District Masterminds">3rd Hop (Syndicate Web)</button>
+              </div>
+            </div>
+            <div id="network-graph" aria-label="Criminal network graph visualization"></div>
+            <div id="network-tooltip" role="tooltip"></div>
+          </div>
+
+          <!-- INJECT PANEL -->
+          <div class="panel inject-panel">
+            <div class="panel-header">
+              <span>Live FIR / Complaint Injection Console</span>
+            </div>
+            <div class="inject-form-container">
+              <form id="fir-inject-form">
+                <div class="form-grid">
+                  <!-- FIR Fields -->
+                  <div class="form-group">
+                    <label for="inject-district">District *</label>
+                    <select id="inject-district" required>
+                      <option value="Bengaluru Urban">Bengaluru Urban</option>
+                      <option value="Mysuru">Mysuru</option>
+                      <option value="Hubballi-Dharwad">Hubballi-Dharwad</option>
+                      <option value="Mangaluru">Mangaluru</option>
+                      <option value="Belagavi">Belagavi</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="inject-station">Police Station *</label>
+                    <input type="text" id="inject-station" placeholder="e.g. Kuvempunagar PS" required>
+                  </div>
+                  <div class="form-group">
+                    <label for="inject-crime">Offense Category *</label>
+                    <select id="inject-crime" required>
+                      <option value="Theft">Theft & Property</option>
+                      <option value="Cybercrime">Cybercrime</option>
+                      <option value="Narcotics & Excise">Narcotics & Excise</option>
+                      <option value="Violent Crimes">Violent Crimes</option>
+                      <option value="Financial Crimes">Financial Crimes</option>
+                    </select>
+                  </div>
+                  <div class="form-group full-width">
+                    <label for="inject-mo">Incident Narrative (Modus Operandi) *</label>
+                    <textarea id="inject-mo" placeholder="Enter full MO details..." rows="3" required></textarea>
+                  </div>
+                  
+                  <!-- Suspect Fields -->
+                  <div class="form-group-separator full-width">SUSPECT PROFILE DETAILS (OPTIONAL)</div>
+                  
+                  <div class="form-group">
+                    <label for="inject-suspect-name">Suspect Name</label>
+                    <input type="text" id="inject-suspect-name" placeholder="e.g. Rajesh Kumar">
+                  </div>
+                  <div class="form-group">
+                    <label for="inject-suspect-age">Age</label>
+                    <input type="number" id="inject-suspect-age" placeholder="e.g. 26" min="1" max="120">
+                  </div>
+                  <div class="form-group">
+                    <label for="inject-suspect-gender">Gender</label>
+                    <select id="inject-suspect-gender">
+                      <option value="MALE">Male</option>
+                      <option value="FEMALE">Female</option>
+                      <option value="TRANSGENDER">Transgender</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div class="form-actions">
+                  <button type="submit" class="btn-submit">SUBMIT LIVE FIR RECORD</button>
+                  <button type="reset" class="btn-reset">CLEAR FORM</button>
+                </div>
+              </form>
+              <div id="inject-status-message"></div>
+            </div>
+          </div>
+
+          <!-- ALERTS & ANOMALY RADAR PANEL (PALANTIR GOTHAM TACTICAL RE-DESIGN) -->
+          <div class="panel alerts-panel">
+            <div class="panel-header gotham-panel-header">
+              <div class="gotham-title-group">
+                <span class="gotham-status-pulse">● RADAR ONLINE</span>
+                <span class="gotham-header-title">KARNATAKA CRIME ANOMALY INTELLIGENCE MATRIX</span>
+              </div>
+              <div class="gotham-header-meta">
+                <span class="gotham-meta-badge" id="anomaly-count-badge">05 ACTIVE ANOMALIES</span>
+              </div>
+            </div>
+            
+            <div class="anomaly-radar-content">
+              <!-- Gotham Summary Telemetry Cards -->
+              <div class="gotham-telemetry-strip">
+                <div class="gotham-stat-card amber-border">
+                  <div class="gotham-stat-hdr">UNDERREPORTING DROPS</div>
+                  <div class="gotham-stat-num amber" id="anom-stat-underreporting">03</div>
+                  <div class="gotham-stat-sub">POSSIBLE FIR SUPPRESSION</div>
+                </div>
+                <div class="gotham-stat-card crimson-border">
+                  <div class="gotham-stat-hdr">ABNORMAL CRIME SURGES</div>
+                  <div class="gotham-stat-num crimson" id="anom-stat-surges">02</div>
+                  <div class="gotham-stat-sub">SYNDICATE OUTBREAK RISKS</div>
+                </div>
+                <div class="gotham-stat-card slate-border">
+                  <div class="gotham-stat-hdr">DISTRICTS FLAGGED</div>
+                  <div class="gotham-stat-num" id="anom-stat-districts">04</div>
+                  <div class="gotham-stat-sub">ACTIVE MONITORING ZONES</div>
+                </div>
+              </div>
+
+              <!-- Gotham Tactical Filter Bar -->
+              <div class="gotham-filter-bar" id="anomaly-filter-chips">
+                <span class="gotham-filter-lbl">FILTER MATRIX:</span>
+                <button class="gotham-filter-btn active" data-filter="all">ALL ANOMALIES</button>
+                <button class="gotham-filter-btn amber" data-filter="UNDERREPORTING_DROP">📉 UNDERREPORTING DROPS</button>
+                <button class="gotham-filter-btn crimson" data-filter="ABNORMAL_SPIKE">⚡ ABNORMAL SURGES</button>
+              </div>
+
+              <!-- Anomaly Cards Matrix -->
+              <div class="anomaly-cards-grid" id="anomaly-cards-container">
+                <!-- Dynamically Populated by JS -->
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- POLICE STATION CASES PANEL (LEVEL 2) -->
+          <div class="panel station-cases-panel">
+            <div class="panel-header station-header-bar">
+              <div class="station-title-group">
+                <i class="ti ti-building-community"></i>
+                <span id="sc-station-title">POLICE STATION CASES</span>
+                <span class="badge med" id="sc-district-tag">KARNATAKA</span>
+              </div>
+              <button class="btn-back" id="btn-back-to-map">← BACK TO GIS MAP</button>
+            </div>
+            
+            <div class="station-content-wrap">
+              <!-- Station HUD -->
+              <div class="station-hud-strip">
+                <div class="sc-hud-card">
+                  <div class="sc-hud-val" id="sc-hud-total">0</div>
+                  <div class="sc-hud-label">Total Station Cases</div>
+                </div>
+                <div class="sc-hud-card">
+                  <div class="sc-hud-val danger" id="sc-hud-highrisk">0</div>
+                  <div class="sc-hud-label">High Risk Offences</div>
+                </div>
+                <div class="sc-hud-card">
+                  <div class="sc-hud-val" id="sc-hud-topcrime">—</div>
+                  <div class="sc-hud-label">Top Crime Category</div>
+                </div>
+              </div>
+
+              <!-- Detailed Filter Bar -->
+              <div class="station-filter-bar">
+                <div class="sc-filter-group">
+                  <label for="sc-crime-filter">Category Filter:</label>
+                  <select id="sc-crime-filter" class="sc-select">
+                    <option value="all">All Categories</option>
+                    <option value="Theft">Theft & Property</option>
+                    <option value="Cybercrime">Cybercrime</option>
+                    <option value="Narcotics">Narcotics & Excise</option>
+                    <option value="Violent">Violent Crimes</option>
+                    <option value="Financial">Financial Crimes</option>
+                  </select>
+                </div>
+                <div class="sc-filter-group">
+                  <label for="sc-shift-filter">Time Shift:</label>
+                  <select id="sc-shift-filter" class="sc-select">
+                    <option value="all">All Hours (00:00 - 23:59)</option>
+                    <option value="morning">Morning Shift (06:00 - 11:59)</option>
+                    <option value="afternoon">Afternoon Shift (12:00 - 16:59)</option>
+                    <option value="evening">Evening Peak (17:00 - 21:59)</option>
+                    <option value="night">Night Shift (22:00 - 05:59)</option>
+                  </select>
+                </div>
+                <div class="sc-filter-group flex-1">
+                  <input type="text" id="sc-search-input" class="sc-input" placeholder="Search FIR number, MO narrative details...">
+                </div>
+              </div>
+
+              <!-- Case Table -->
+              <div class="station-table-wrap">
+                <table class="data-table station-case-table">
+                  <thead>
+                    <tr>
+                      <th>FIR Number</th>
+                      <th>Category</th>
+                      <th>Incident Timestamp</th>
+                      <th>Modus Operandi (MO Narrative)</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sc-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- DEEP CASE DOSSIER PANEL (LEVEL 3) -->
+          <div class="panel case-dossier-panel">
+            <div class="panel-header dossier-header-bar">
+              <div class="dossier-title-group">
+                <i class="ti ti-file-certificate"></i>
+                <span>CASE DOSSIER · <span id="cd-fir-number">KA-BGU-2023-000002</span></span>
+              </div>
+              <div class="dossier-nav-btns">
+                <button class="btn-back" id="btn-back-to-station">← BACK TO STATION CASES</button>
+                <button class="btn-back" id="btn-dossier-to-map">← GIS MAP</button>
+              </div>
+            </div>
+
+            <div class="dossier-content-wrap">
+              <div class="dossier-grid">
+                
+                <!-- Left Column: Case Meta & Suspect Dossier -->
+                <div class="dossier-left-col">
+                  <!-- Case Meta Card -->
+                  <div class="dossier-card">
+                    <div class="dossier-card-header">CASE SPECIFICATION & METADATA</div>
+                    <div class="dossier-meta-grid">
+                      <div class="meta-item">
+                        <span class="meta-label">FIR NUMBER</span>
+                        <span class="meta-val" id="cd-fir-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">DISTRICT</span>
+                        <span class="meta-val" id="cd-district-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">POLICE STATION</span>
+                        <span class="meta-val" id="cd-station-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">OFFENSE CLASS</span>
+                        <span class="meta-val" id="cd-crime-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">TIMESTAMP</span>
+                        <span class="meta-val" id="cd-time-val">—</span>
+                      </div>
+                      <div class="meta-item">
+                        <span class="meta-label">COORDINATES</span>
+                        <span class="meta-val" id="cd-coords-val">—</span>
+                      </div>
+                    </div>
+                    
+                    <div class="mo-section">
+                      <div class="mo-label">INCIDENT NARRATIVE & MODUS OPERANDI (MO)</div>
+                      <div class="mo-box" id="cd-mo-box">Loading incident narrative...</div>
+                    </div>
+                  </div>
+
+                  <!-- Suspect Profiles Section -->
+                  <div class="dossier-card">
+                    <div class="dossier-card-header">REGISTERED SUSPECTS & ACCOMPLICES</div>
+                    <div id="cd-suspects-list" class="suspect-card-grid"></div>
+                  </div>
+                </div>
+
+                <!-- Right Column: Embedded Criminal Network Graph -->
+                <div class="dossier-right-col">
+                  <div class="dossier-card full-height">
+                    <div class="dossier-card-header">
+                      <span>CRIMINAL NETWORK & SYNDICATE TRACE</span>
+                      <span class="panel-date">D3.JS GRAPH ENGINE</span>
+                    </div>
+                    <div class="dossier-graph-box">
+                      <div id="dossier-network-graph"></div>
+                      <div id="dossier-network-tooltip"></div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- SUSPECT INTELLIGENCE DOSSIER MODAL -->
+  <div id="suspect-dossier-modal" class="modal-overlay" role="dialog" aria-label="Suspect Intelligence Dossier">
+    <div class="suspect-modal-content">
+      <div class="suspect-modal-header">
+        <div class="suspect-header-title">
+          <i class="ti ti-user-exclamation"></i>
+          <span>SUSPECT INTELLIGENCE DOSSIER · <span id="sd-suspect-name">SUSPECT PROFILE</span></span>
+        </div>
+        <button class="suspect-modal-close" id="suspect-modal-close" aria-label="Close suspect modal">✕ CLOSE</button>
+      </div>
+
+      <div class="suspect-modal-body">
+        <!-- Hero Section -->
+        <div class="suspect-profile-hero">
+          <div class="suspect-avatar-box">
+            <i class="ti ti-user"></i>
+          </div>
+          <div class="suspect-hero-info">
+            <div class="suspect-hero-name" id="sd-hero-name">Suspect Profile</div>
+            <div class="suspect-hero-meta">
+              <span>SUSPECT ID: <strong id="sd-suspect-id">—</strong></span> · 
+              <span>AGE: <strong id="sd-suspect-age">—</strong></span> · 
+              <span>GENDER: <strong id="sd-suspect-gender">—</strong></span>
+            </div>
+            <div class="suspect-status-row">
+              <span class="badge high" id="sd-risk-badge">RISK SCORE: 82.5</span>
+              <span class="badge med" id="sd-recidivism-badge">RECIDIVISM RISK: HIGH</span>
+              <span class="badge low">STATUS: ACTIVE WARRANT</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Linked Cases Table -->
+        <div class="suspect-section-header">
+          <i class="ti ti-link"></i> ALL REGISTERED LINKED FIR CASES & OFFENSE HISTORY
+        </div>
+
+        <div class="suspect-cases-wrap">
+          <table class="data-table suspect-linked-cases-table">
+            <thead>
+              <tr>
+                <th>FIR Number</th>
+                <th>Police Station</th>
+                <th>District</th>
+                <th>Crime Category</th>
+                <th>Timestamp</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="sd-linked-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAT OVERLAY — outside app-shell, fixed position -->
+  <button id="chat-fab" aria-label="Open AI assistant">
+    <i class="ti ti-message-circle"></i>
+  </button>
+
+  <div id="chat-panel" role="dialog" aria-label="Ashen AI Query Agent">
+    <div class="chat-header">
+      <div class="chat-status-dot"></div>
+      <span>ASHEN AI · QUERY AGENT</span>
+      <button class="chat-close" id="chat-close" aria-label="Close chat panel">✕</button>
+    </div>
+    <div class="chat-auth-bar" id="chat-auth-bar">
+      <!-- Hide Google Sign-in elements as requested -->
+      <button id="google-login-btn" class="google-login-btn" style="display: none !important;">
+        <i class="ti ti-brand-google"></i> Login with Google
+      </button>
+      <div id="google-user-info" class="google-user-info" style="display: none !important;">
+        <span id="google-user-name">Google Connected</span>
+        <button id="google-logout-btn" class="google-logout-btn">Sign out</button>
+      </div>
+      <button id="client-id-config-btn" class="client-id-config-btn" title="Configure Gemini API Key">
+        <i class="ti ti-settings"></i>
+      </button>
+    </div>
+    <div class="client-id-config-panel" id="client-id-config-panel" style="display: none;">
+      <div class="config-tabs">
+        <!-- Hide OAuth tab, make API Key tab active by default -->
+        <span class="config-tab" id="tab-oauth-btn" style="display: none !important;">OAuth Client ID</span>
+        <span class="config-tab active" id="tab-apikey-btn">Gemini API Key</span>
+      </div>
+      <div class="config-tab-content" id="tab-oauth-content" style="display: none;">
+        <input type="text" id="google-client-id-input" placeholder="Google OAuth Client ID...">
+        <button id="save-client-id-btn">Save</button>
+      </div>
+      <div class="config-tab-content" id="tab-apikey-content" style="display: flex;">
+        <input type="password" id="gemini-api-key-input" placeholder="Gemini API Key (AI Studio)...">
+        <button id="save-api-key-btn">Save</button>
+      </div>
+    </div>
+    <div id="chat-messages" aria-live="polite"></div>
+    <div class="voice-controls-row">
+      <div class="lang-chips">
+        <span class="lang-chip active" data-lang="en-IN">EN</span>
+        <span class="lang-chip" data-lang="hi-IN">HI</span>
+        <span class="lang-chip" data-lang="kn-IN">KN</span>
+      </div>
+      <div id="voice-status">Ready</div>
+    </div>
+    <div class="chat-input-row">
+      <input
+        id="chat-input"
+        placeholder="Query the intelligence database..."
+        aria-label="Chat query input"
+      >
+      <button id="voice-mic-btn" aria-label="Voice input toggle">
+        <i class="ti ti-microphone"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="voiceSearch.js"></script>
+  <script src="main.js" defer></script>
+</body>
+</html>

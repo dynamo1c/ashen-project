@@ -1,0 +1,21 @@
+Sl. No.,City,Education - Illiterate - ( Col. 3),Education - Upto Primary - ( Col. 4),Education - Above Primary to Matric - ( Col. 5),Education - Above Matric to High Secondary - ( Col. 6),Education - Above Higher Secondary - ( Col. 7),Education - Total - ( Col. 8),Family Background - Living with Parents - ( Col. 9),Family Background - Living with Guardians - ( Col. 10),Family Background - Home-less - ( Col. 11),Family Background - Total - ( Col. 12)
+1,Ahmedabad (Gujarat),8,111,245,96,0,460,460,0,0,460
+2,Bengaluru (Karnataka),8,95,360,82,6,551,524,20,7,551
+3,Chennai (Tamil Nadu),26,156,393,139,57,771,574,157,40,771
+4,Coimbatore (Tamil Nadu),1,12,14,8,2,37,20,17,0,37
+5,Delhi City,381,995,1432,246,44,3098,2640,334,124,3098
+6,Ghaziabad (Uttar Pradesh),0,0,0,0,0,0,0,0,0,0
+7,Hyderabad (Telangana),26,8,98,64,45,241,226,9,6,241
+8,Indore (Madhya Pradesh),0,116,102,12,7,237,204,22,11,237
+9,Jaipur (Rajasthan),2,68,195,96,19,380,340,23,17,380
+10,Kanpur (Uttar Pradesh),16,18,14,0,0,48,32,0,16,48
+11,Kochi (Kerala),0,8,43,5,0,56,56,0,0,56
+12,Kolkata (West Bengal),4,46,38,45,0,133,115,18,0,133
+13,Kozhikode (Kerala),0,0,25,27,6,58,48,3,7,58
+14,Lucknow (Uttar Pradesh),0,0,0,0,0,0,0,0,0,0
+15,Mumbai (Maharashtra),0,32,161,51,98,342,329,13,0,342
+16,Nagpur (Maharashtra),4,84,207,76,2,373,361,12,0,373
+17,Patna (Bihar),0,2,34,14,0,50,15,9,26,50
+18,Pune (Maharashtra),12,76,278,77,0,443,436,7,0,443
+19,Surat (Gujarat),0,243,0,0,0,243,243,0,0,243
+Total Cities,Total Cities,488,2070,3639,1038,286,7521,6623,644,254,7521

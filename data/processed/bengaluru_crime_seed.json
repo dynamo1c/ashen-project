@@ -1,0 +1,1313 @@
+{
+  "meta": {
+    "target_city": "Bengaluru",
+    "state": "Karnataka",
+    "year_baseline": 2023,
+    "description": "Baseline crime ratios and demographic profiles for Bengaluru (NCRB 2023). Used as mathematical seed for synthetic generator."
+  },
+  "bengaluru_volumes": {
+    "sll_cases_reported_2023": 26883,
+    "crime_against_children_cases_reported_2023": 1982,
+    "juvenile_ipc_crimes_apprehended_2023": 372
+  },
+  "distributions": {
+    "sll_crimes": [
+      {
+        "crime_head": "The Dowry Prohibition Act",
+        "cases_metropolitan_trial_aggregate": 1049,
+        "proportion": 0.002279126762032225
+      },
+      {
+        "crime_head": "The Immoral Traffic (Prevention) Act",
+        "cases_metropolitan_trial_aggregate": 510,
+        "proportion": 0.001108059722246363
+      },
+      {
+        "crime_head": "The Protection of Women from Domestic Violence Act",
+        "cases_metropolitan_trial_aggregate": 38,
+        "proportion": 8.25613126379643e-05
+      },
+      {
+        "crime_head": "The Indecent Representation of Women (Prohibition) Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Crime Against Women - Related Acts",
+        "cases_metropolitan_trial_aggregate": 1597,
+        "proportion": 0.0034697477969165523
+      },
+      {
+        "crime_head": "The Protection of Children from Sexual Offences Act",
+        "cases_metropolitan_trial_aggregate": 7004,
+        "proportion": 0.015217353518850051
+      },
+      {
+        "crime_head": "The Juvenile Justice (Care and Protection of Children) Act",
+        "cases_metropolitan_trial_aggregate": 364,
+        "proportion": 0.000790850468426816
+      },
+      {
+        "crime_head": "The Prohibition of Child Marriage Act",
+        "cases_metropolitan_trial_aggregate": 18,
+        "proportion": 3.9107990196930456e-05
+      },
+      {
+        "crime_head": "The Pre-Natal Diagnostic Techniques (Reg and Prev of Misuse) Act",
+        "cases_metropolitan_trial_aggregate": 4,
+        "proportion": 8.690664488206768e-06
+      },
+      {
+        "crime_head": "The Child Labour (Prohibition & Regulation) Act",
+        "cases_metropolitan_trial_aggregate": 98,
+        "proportion": 0.00021292127996106583
+      },
+      {
+        "crime_head": "The Medical Termination of Pregnancy Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Children Related - Acts",
+        "cases_metropolitan_trial_aggregate": 7488,
+        "proportion": 0.01626892392192307
+      },
+      {
+        "crime_head": "The SC/ST (Prevention of Atrocities) Act for Crimes against SCs",
+        "cases_metropolitan_trial_aggregate": 121,
+        "proportion": 0.0002628926007682547
+      },
+      {
+        "crime_head": "The SC/ST (Prevention of Atrocities) Act for Crimes against STs",
+        "cases_metropolitan_trial_aggregate": 3,
+        "proportion": 6.517998366155076e-06
+      },
+      {
+        "crime_head": "The Protection of Civil Rights Act for Crimes against SCs",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "The Protection of Civil Rights Act for Crimes against STs",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Scheduled Castes and Scheduled Tribes - Related Acts",
+        "cases_metropolitan_trial_aggregate": 124,
+        "proportion": 0.0002694105991344098
+      },
+      {
+        "crime_head": "The Prevention of Damage to Public Property Act",
+        "cases_metropolitan_trial_aggregate": 274,
+        "proportion": 0.0005953105174421636
+      },
+      {
+        "crime_head": "The Unlawful Activities (P) Act",
+        "cases_metropolitan_trial_aggregate": 7,
+        "proportion": 1.5208662854361844e-05
+      },
+      {
+        "crime_head": "The Official Secrets Act",
+        "cases_metropolitan_trial_aggregate": 2,
+        "proportion": 4.345332244103384e-06
+      },
+      {
+        "crime_head": "Offences against State - Related Acts",
+        "cases_metropolitan_trial_aggregate": 283,
+        "proportion": 0.0006148645125406289
+      },
+      {
+        "crime_head": "Legal/Licensed Arms",
+        "cases_metropolitan_trial_aggregate": 32,
+        "proportion": 6.952531590565414e-05
+      },
+      {
+        "crime_head": "Illegal/Unlicensed Arms",
+        "cases_metropolitan_trial_aggregate": 2391,
+        "proportion": 0.005194844697825596
+      },
+      {
+        "crime_head": "Other Arms",
+        "cases_metropolitan_trial_aggregate": 4951,
+        "proportion": 0.010756869970277928
+      },
+      {
+        "crime_head": "The Explosives Act",
+        "cases_metropolitan_trial_aggregate": 199,
+        "proportion": 0.0004323605582882867
+      },
+      {
+        "crime_head": "The Explosive Substances Act",
+        "cases_metropolitan_trial_aggregate": 140,
+        "proportion": 0.0003041732570872369
+      },
+      {
+        "crime_head": "Arms/Explosive - Related Acts",
+        "cases_metropolitan_trial_aggregate": 7713,
+        "proportion": 0.0167577737993847
+      },
+      {
+        "crime_head": "The Information Technology Act",
+        "cases_metropolitan_trial_aggregate": 3069,
+        "proportion": 0.006667912328576643
+      },
+      {
+        "crime_head": "The Copy Right Act",
+        "cases_metropolitan_trial_aggregate": 887,
+        "proportion": 0.001927154850259851
+      },
+      {
+        "crime_head": "The Trade Marks Act",
+        "cases_metropolitan_trial_aggregate": 55,
+        "proportion": 0.00011949663671284306
+      },
+      {
+        "crime_head": "Information Technology/Intellectual Property - Related Acts",
+        "cases_metropolitan_trial_aggregate": 4011,
+        "proportion": 0.008714563815549336
+      },
+      {
+        "crime_head": "The Lotteries (Regulation) Act",
+        "cases_metropolitan_trial_aggregate": 230,
+        "proportion": 0.0004997132080718892
+      },
+      {
+        "crime_head": "The Chit Funds Acts",
+        "cases_metropolitan_trial_aggregate": 10,
+        "proportion": 2.172666122051692e-05
+      },
+      {
+        "crime_head": "The Negotiable Instruments Act",
+        "cases_metropolitan_trial_aggregate": 6,
+        "proportion": 1.3035996732310152e-05
+      },
+      {
+        "crime_head": "The Benami Transaction (Prohibition) Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "The Mines and Minerals (Development and Regulation) Act",
+        "cases_metropolitan_trial_aggregate": 15,
+        "proportion": 3.258999183077538e-05
+      },
+      {
+        "crime_head": "Prevention of Corruption Act",
+        "cases_metropolitan_trial_aggregate": 63,
+        "proportion": 0.0001368779656892566
+      },
+      {
+        "crime_head": "Finance & Economic Acts",
+        "cases_metropolitan_trial_aggregate": 324,
+        "proportion": 0.0007039438235447482
+      },
+      {
+        "crime_head": "Prohibition Act (State)",
+        "cases_metropolitan_trial_aggregate": 67505,
+        "proportion": 0.14666582656909946
+      },
+      {
+        "crime_head": "The Excise Act",
+        "cases_metropolitan_trial_aggregate": 13755,
+        "proportion": 0.029885022508821024
+      },
+      {
+        "crime_head": "Possession of drugs for Personal use/Consumption",
+        "cases_metropolitan_trial_aggregate": 23661,
+        "proportion": 0.05140745311386508
+      },
+      {
+        "crime_head": "Possession of drugs for Trafficking",
+        "cases_metropolitan_trial_aggregate": 3202,
+        "proportion": 0.006956876922809518
+      },
+      {
+        "crime_head": "Liquor & Narcotic Drugs \u0096 Related Acts",
+        "cases_metropolitan_trial_aggregate": 108123,
+        "proportion": 0.2349151791145951
+      },
+      {
+        "crime_head": "The Forest Act & The Forest Conservation Act",
+        "cases_metropolitan_trial_aggregate": 86,
+        "proportion": 0.00018684928649644552
+      },
+      {
+        "crime_head": "The Wildlife Protection Act",
+        "cases_metropolitan_trial_aggregate": 22,
+        "proportion": 4.7798654685137224e-05
+      },
+      {
+        "crime_head": "The Environmental (Protection) Act",
+        "cases_metropolitan_trial_aggregate": 87,
+        "proportion": 0.0001890219526184972
+      },
+      {
+        "crime_head": "The Air & The Water (Prevention & Control of Pollution) Act",
+        "cases_metropolitan_trial_aggregate": 7,
+        "proportion": 1.5208662854361844e-05
+      },
+      {
+        "crime_head": "The Cigarette and Other Tobacco Products Act",
+        "cases_metropolitan_trial_aggregate": 6673,
+        "proportion": 0.014498201032450942
+      },
+      {
+        "crime_head": "Noise Pollution Acts",
+        "cases_metropolitan_trial_aggregate": 1264,
+        "proportion": 0.0027462499782733387
+      },
+      {
+        "crime_head": "The National Green Tribunal Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Environment & Pollution - Related Acts",
+        "cases_metropolitan_trial_aggregate": 8139,
+        "proportion": 0.01768332956737872
+      },
+      {
+        "crime_head": "The Registration of Foreigners Act & The Foreigners Act",
+        "cases_metropolitan_trial_aggregate": 106,
+        "proportion": 0.00023030260893747937
+      },
+      {
+        "crime_head": "The Passport Act",
+        "cases_metropolitan_trial_aggregate": 277,
+        "proportion": 0.0006018285158083187
+      },
+      {
+        "crime_head": "The Emigration Act",
+        "cases_metropolitan_trial_aggregate": 20,
+        "proportion": 4.345332244103384e-05
+      },
+      {
+        "crime_head": "The Citizenship Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Foreigner & Passport - Related Acts",
+        "cases_metropolitan_trial_aggregate": 403,
+        "proportion": 0.0008755844471868319
+      },
+      {
+        "crime_head": "The Indian Railways Act",
+        "cases_metropolitan_trial_aggregate": 1,
+        "proportion": 2.172666122051692e-06
+      },
+      {
+        "crime_head": "The Railway Property (Unlawful Possession) Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Railways - Related Acts",
+        "cases_metropolitan_trial_aggregate": 1,
+        "proportion": 2.172666122051692e-06
+      },
+      {
+        "crime_head": "The Indian Telegraph Act",
+        "cases_metropolitan_trial_aggregate": 2,
+        "proportion": 4.345332244103384e-06
+      },
+      {
+        "crime_head": "The Telegraph Wire (Unlawful Possession) Act",
+        "cases_metropolitan_trial_aggregate": 3,
+        "proportion": 6.517998366155076e-06
+      },
+      {
+        "crime_head": "The Cinematograph Act",
+        "cases_metropolitan_trial_aggregate": 2,
+        "proportion": 4.345332244103384e-06
+      },
+      {
+        "crime_head": "The Cable Television Networks (Regulation) Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Telegraph/Cinematograph Acts",
+        "cases_metropolitan_trial_aggregate": 7,
+        "proportion": 1.5208662854361844e-05
+      },
+      {
+        "crime_head": "The Essential Commodities Act",
+        "cases_metropolitan_trial_aggregate": 277,
+        "proportion": 0.0006018285158083187
+      },
+      {
+        "crime_head": "The Prevention of Food Adulteration Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "The Food Safety & Standards Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Food, Drugs and Essential Commodities Acts",
+        "cases_metropolitan_trial_aggregate": 277,
+        "proportion": 0.0006018285158083187
+      },
+      {
+        "crime_head": "MCOCA/Control of Organised Crimes",
+        "cases_metropolitan_trial_aggregate": 2,
+        "proportion": 4.345332244103384e-06
+      },
+      {
+        "crime_head": "The Gambling Act",
+        "cases_metropolitan_trial_aggregate": 13325,
+        "proportion": 0.028950776076338797
+      },
+      {
+        "crime_head": "The Electricity Act",
+        "cases_metropolitan_trial_aggregate": 5125,
+        "proportion": 0.011134913875514922
+      },
+      {
+        "crime_head": "The Antiques and Art Treasures Act",
+        "cases_metropolitan_trial_aggregate": 1,
+        "proportion": 2.172666122051692e-06
+      },
+      {
+        "crime_head": "The Representation of the People Act",
+        "cases_metropolitan_trial_aggregate": 55,
+        "proportion": 0.00011949663671284306
+      },
+      {
+        "crime_head": "For Crimes against SCs",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "For Crimes against STs",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Against others",
+        "cases_metropolitan_trial_aggregate": 4,
+        "proportion": 8.690664488206768e-06
+      },
+      {
+        "crime_head": "The Prevention of Insults to National Honour Act",
+        "cases_metropolitan_trial_aggregate": 7,
+        "proportion": 1.5208662854361844e-05
+      },
+      {
+        "crime_head": "Defacement of Public Property Acts",
+        "cases_metropolitan_trial_aggregate": 2475,
+        "proportion": 0.005377348652077938
+      },
+      {
+        "crime_head": "The Transplantation of Human Organs Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Transgender Persons (Protection of Rights) Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "The Mental Health Act",
+        "cases_metropolitan_trial_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Motor Vehicle Act",
+        "cases_metropolitan_trial_aggregate": 34489,
+        "proportion": 0.0749330818834408
+      },
+      {
+        "crime_head": "City/Town Police Acts",
+        "cases_metropolitan_trial_aggregate": 9909,
+        "proportion": 0.021528948603410217
+      },
+      {
+        "crime_head": "Other State Local Acts",
+        "cases_metropolitan_trial_aggregate": 23918,
+        "proportion": 0.05196582830723237
+      },
+      {
+        "crime_head": "Other Regulatory & Enforcement - Acts",
+        "cases_metropolitan_trial_aggregate": 89310,
+        "proportion": 0.19404081136043663
+      },
+      {
+        "crime_head": "Other SLL Crimes",
+        "cases_metropolitan_trial_aggregate": 4664,
+        "proportion": 0.010133314793249092
+      }
+    ],
+    "ipc_crimes": [
+      {
+        "crime_head": "Murder",
+        "cases_metropolitan_aggregate": 2004,
+        "proportion": 0.0030029175051809317
+      },
+      {
+        "crime_head": "Culpable Homicide not amounting to Murder",
+        "cases_metropolitan_aggregate": 274,
+        "proportion": 0.0004105785411275326
+      },
+      {
+        "crime_head": "Hit and Run",
+        "cases_metropolitan_aggregate": 3496,
+        "proportion": 0.005238622553948372
+      },
+      {
+        "crime_head": "Other Accidents",
+        "cases_metropolitan_aggregate": 4967,
+        "proportion": 0.007442859904308228
+      },
+      {
+        "crime_head": "Deaths due to Negligence relating to Rail Accidents",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 1.4984618289326006e-06
+      },
+      {
+        "crime_head": "Deaths due to Medical Negligence",
+        "cases_metropolitan_aggregate": 17,
+        "proportion": 2.547385109185421e-05
+      },
+      {
+        "crime_head": "Deaths due to Negligence of Civic Bodies",
+        "cases_metropolitan_aggregate": 22,
+        "proportion": 3.296616023651721e-05
+      },
+      {
+        "crime_head": "Deaths due to other Negligence",
+        "cases_metropolitan_aggregate": 1465,
+        "proportion": 0.00219524657938626
+      },
+      {
+        "crime_head": "Dowry Deaths",
+        "cases_metropolitan_aggregate": 392,
+        "proportion": 0.0005873970369415795
+      },
+      {
+        "crime_head": "Abetment of Suicide",
+        "cases_metropolitan_aggregate": 771,
+        "proportion": 0.0011553140701070351
+      },
+      {
+        "crime_head": "Attempt to Commit Murder",
+        "cases_metropolitan_aggregate": 3714,
+        "proportion": 0.005565287232655679
+      },
+      {
+        "crime_head": "Attempt to commit Culpable Homicide",
+        "cases_metropolitan_aggregate": 1143,
+        "proportion": 0.0017127418704699626
+      },
+      {
+        "crime_head": "Attempt to Commit Suicide",
+        "cases_metropolitan_aggregate": 134,
+        "proportion": 0.0002007938850769685
+      },
+      {
+        "crime_head": "Miscarriage, Infanticide, Foeticide and Abandonment",
+        "cases_metropolitan_aggregate": 185,
+        "proportion": 0.0002772154383525311
+      },
+      {
+        "crime_head": "Voluntarily Causing Simple Hurt",
+        "cases_metropolitan_aggregate": 19643,
+        "proportion": 0.029434285705723075
+      },
+      {
+        "crime_head": "Voluntarily causing hurt by Dangerous weapons or means",
+        "cases_metropolitan_aggregate": 17359,
+        "proportion": 0.026011798888441014
+      },
+      {
+        "crime_head": "Voluntarily Causing hurt/Force to deter public servant from his duty",
+        "cases_metropolitan_aggregate": 1127,
+        "proportion": 0.001688766481207041
+      },
+      {
+        "crime_head": "Causing Hurt by act endangering life/safety of others",
+        "cases_metropolitan_aggregate": 803,
+        "proportion": 0.0012032648486328783
+      },
+      {
+        "crime_head": "Other Simple Hurt",
+        "cases_metropolitan_aggregate": 576,
+        "proportion": 0.000863114013465178
+      },
+      {
+        "crime_head": "Voluntarily causing grievous hurt",
+        "cases_metropolitan_aggregate": 2810,
+        "proportion": 0.004210677739300608
+      },
+      {
+        "crime_head": "Voluntarily causing grievous hurt by dangerous weapons or means",
+        "cases_metropolitan_aggregate": 1754,
+        "proportion": 0.0026283020479477815
+      },
+      {
+        "crime_head": "Acid Attack",
+        "cases_metropolitan_aggregate": 29,
+        "proportion": 4.345539303904542e-05
+      },
+      {
+        "crime_head": "Attempt to Acid Attack",
+        "cases_metropolitan_aggregate": 12,
+        "proportion": 1.7981541947191208e-05
+      },
+      {
+        "crime_head": "Voluntarily Causing Grievous hurt/Force to deter public servant from his duty",
+        "cases_metropolitan_aggregate": 80,
+        "proportion": 0.00011987694631460806
+      },
+      {
+        "crime_head": "Causing Grevious Hurt by act endangering life/safety of others",
+        "cases_metropolitan_aggregate": 753,
+        "proportion": 0.0011283417571862483
+      },
+      {
+        "crime_head": "Other Grevious Hurt",
+        "cases_metropolitan_aggregate": 8,
+        "proportion": 1.1987694631460805e-05
+      },
+      {
+        "crime_head": "Wrongful Restraint/Confinement",
+        "cases_metropolitan_aggregate": 725,
+        "proportion": 0.0010863848259761355
+      },
+      {
+        "crime_head": "Assault on Women with Intent to Outrage her Modesty",
+        "cases_metropolitan_aggregate": 4103,
+        "proportion": 0.006148188884110461
+      },
+      {
+        "crime_head": "at Work or Office Premises",
+        "cases_metropolitan_aggregate": 56,
+        "proportion": 8.391386242022564e-05
+      },
+      {
+        "crime_head": "In Public Transport System",
+        "cases_metropolitan_aggregate": 28,
+        "proportion": 4.195693121011282e-05
+      },
+      {
+        "crime_head": "In Shelter Homes for women and Children",
+        "cases_metropolitan_aggregate": 163,
+        "proportion": 0.00024424927811601393
+      },
+      {
+        "crime_head": "Other Places",
+        "cases_metropolitan_aggregate": 2010,
+        "proportion": 0.0030119082761545274
+      },
+      {
+        "crime_head": "Assault or use of Criminal Force on women with intent to Disrobe",
+        "cases_metropolitan_aggregate": 659,
+        "proportion": 0.0009874863452665839
+      },
+      {
+        "crime_head": "Voyeurism",
+        "cases_metropolitan_aggregate": 253,
+        "proportion": 0.00037911084271994796
+      },
+      {
+        "crime_head": "Stalking",
+        "cases_metropolitan_aggregate": 1976,
+        "proportion": 0.002960960573970819
+      },
+      {
+        "crime_head": "Missing Children Deemed as Kidnapped",
+        "cases_metropolitan_aggregate": 7584,
+        "proportion": 0.011364334510624843
+      },
+      {
+        "crime_head": "Other Kidnapping and Abduction",
+        "cases_metropolitan_aggregate": 5022,
+        "proportion": 0.00752527530489952
+      },
+      {
+        "crime_head": "Kidnapping and Abduction for the Purpose of Begging",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Kidnapping and Abduction in order to Murder",
+        "cases_metropolitan_aggregate": 20,
+        "proportion": 2.9969236578652014e-05
+      },
+      {
+        "crime_head": "Kidnapping for Ransom",
+        "cases_metropolitan_aggregate": 105,
+        "proportion": 0.00015733849203792308
+      },
+      {
+        "crime_head": "Kidnapping and Abduction of Women to compel her for marriage",
+        "cases_metropolitan_aggregate": 1082,
+        "proportion": 0.001621335698905074
+      },
+      {
+        "crime_head": "Procuration of Minor Girls",
+        "cases_metropolitan_aggregate": 20,
+        "proportion": 2.9969236578652014e-05
+      },
+      {
+        "crime_head": "Importation of Girls from Foreign Country",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Other Kidnapping and Abducion",
+        "cases_metropolitan_aggregate": 1206,
+        "proportion": 0.0018071449656927164
+      },
+      {
+        "crime_head": "Human Trafficking",
+        "cases_metropolitan_aggregate": 221,
+        "proportion": 0.0003311600641941048
+      },
+      {
+        "crime_head": "Exploitation of Trafficked Person",
+        "cases_metropolitan_aggregate": 64,
+        "proportion": 9.590155705168644e-05
+      },
+      {
+        "crime_head": "Selling of Minors for Prostitution",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Buying of Minors for Prostitution",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Rape",
+        "cases_metropolitan_aggregate": 3606,
+        "proportion": 0.005403453355130958
+      },
+      {
+        "crime_head": "Attempt to Commit Rape",
+        "cases_metropolitan_aggregate": 34,
+        "proportion": 5.094770218370842e-05
+      },
+      {
+        "crime_head": "Unnatural Offences",
+        "cases_metropolitan_aggregate": 134,
+        "proportion": 0.0002007938850769685
+      },
+      {
+        "crime_head": "Sedition",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Others",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Unlawful Assembly",
+        "cases_metropolitan_aggregate": 1047,
+        "proportion": 0.0015688895348924328
+      },
+      {
+        "crime_head": "Communal/Religious",
+        "cases_metropolitan_aggregate": 10,
+        "proportion": 1.4984618289326007e-05
+      },
+      {
+        "crime_head": "Sectarian",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Industrial",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Political",
+        "cases_metropolitan_aggregate": 30,
+        "proportion": 4.495385486797802e-05
+      },
+      {
+        "crime_head": "Caste Conflict",
+        "cases_metropolitan_aggregate": 4,
+        "proportion": 5.993847315730402e-06
+      },
+      {
+        "crime_head": "Agrarian",
+        "cases_metropolitan_aggregate": 16,
+        "proportion": 2.397538926292161e-05
+      },
+      {
+        "crime_head": "Students",
+        "cases_metropolitan_aggregate": 34,
+        "proportion": 5.094770218370842e-05
+      },
+      {
+        "crime_head": "Money Dispute",
+        "cases_metropolitan_aggregate": 9,
+        "proportion": 1.3486156460393406e-05
+      },
+      {
+        "crime_head": "Water Dispute",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 1.4984618289326006e-06
+      },
+      {
+        "crime_head": "Land/Property Dispute",
+        "cases_metropolitan_aggregate": 93,
+        "proportion": 0.00013935695009073188
+      },
+      {
+        "crime_head": "Family Disputes",
+        "cases_metropolitan_aggregate": 40,
+        "proportion": 5.993847315730403e-05
+      },
+      {
+        "crime_head": "Enmity/Rivalry",
+        "cases_metropolitan_aggregate": 80,
+        "proportion": 0.00011987694631460806
+      },
+      {
+        "crime_head": "Electricity/Power Supply Disputes",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Rioting while in Aandolan/Morcha",
+        "cases_metropolitan_aggregate": 90,
+        "proportion": 0.00013486156460393406
+      },
+      {
+        "crime_head": "Rioting/Attacks on Police Personnel or Govt Servants",
+        "cases_metropolitan_aggregate": 17,
+        "proportion": 2.547385109185421e-05
+      },
+      {
+        "crime_head": "Other Riots",
+        "cases_metropolitan_aggregate": 795,
+        "proportion": 0.0011912771540014174
+      },
+      {
+        "crime_head": "Promoting enmity between groups",
+        "cases_metropolitan_aggregate": 215,
+        "proportion": 0.00032216929322050915
+      },
+      {
+        "crime_head": "Imputation, assertions prejudicial to national integration",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 1.4984618289326006e-06
+      },
+      {
+        "crime_head": "Affray",
+        "cases_metropolitan_aggregate": 483,
+        "proportion": 0.0007237570633744461
+      },
+      {
+        "crime_head": "Auto/Motor Vehicle Theft",
+        "cases_metropolitan_aggregate": 79053,
+        "proportion": 0.11845790296260889
+      },
+      {
+        "crime_head": "Other Thefts",
+        "cases_metropolitan_aggregate": 220150,
+        "proportion": 0.32988637163951207
+      },
+      {
+        "crime_head": "Day Time",
+        "cases_metropolitan_aggregate": 4131,
+        "proportion": 0.006190145815320573
+      },
+      {
+        "crime_head": "Night",
+        "cases_metropolitan_aggregate": 11540,
+        "proportion": 0.01729224950588221
+      },
+      {
+        "crime_head": "Extortion and Blackmailing",
+        "cases_metropolitan_aggregate": 1924,
+        "proportion": 0.002883040558866324
+      },
+      {
+        "crime_head": "Robbery",
+        "cases_metropolitan_aggregate": 5334,
+        "proportion": 0.007992795395526492
+      },
+      {
+        "crime_head": "Attempt to Commit Dacoity/Robbery",
+        "cases_metropolitan_aggregate": 114,
+        "proportion": 0.00017082464849831646
+      },
+      {
+        "crime_head": "Dacoity",
+        "cases_metropolitan_aggregate": 237,
+        "proportion": 0.00035513545345702634
+      },
+      {
+        "crime_head": "Dacoity with Murder",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Making Preparation and Assembly for committing Dacoity",
+        "cases_metropolitan_aggregate": 224,
+        "proportion": 0.00033565544968090257
+      },
+      {
+        "crime_head": "Criminal Misappropriation",
+        "cases_metropolitan_aggregate": 16,
+        "proportion": 2.397538926292161e-05
+      },
+      {
+        "crime_head": "Criminal Breach of Trust",
+        "cases_metropolitan_aggregate": 4673,
+        "proportion": 0.007002312126602043
+      },
+      {
+        "crime_head": "Dishonestly Receiving/Dealing-in Stolen Property",
+        "cases_metropolitan_aggregate": 704,
+        "proportion": 0.0010549171275685508
+      },
+      {
+        "crime_head": "Counterfeit Coin",
+        "cases_metropolitan_aggregate": 4,
+        "proportion": 5.993847315730402e-06
+      },
+      {
+        "crime_head": "Counterfeiting Government Stamp",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Counterfeiting of Seal or Mark",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Counterfeit Currency and Bank notes",
+        "cases_metropolitan_aggregate": 117,
+        "proportion": 0.00017532003398511428
+      },
+      {
+        "crime_head": "Bank",
+        "cases_metropolitan_aggregate": 1563,
+        "proportion": 0.002342095838621655
+      },
+      {
+        "crime_head": "ATMs",
+        "cases_metropolitan_aggregate": 361,
+        "proportion": 0.0005409447202446688
+      },
+      {
+        "crime_head": "Credit Card/Debit Card",
+        "cases_metropolitan_aggregate": 853,
+        "proportion": 0.0012781879400795085
+      },
+      {
+        "crime_head": "Other Frauds",
+        "cases_metropolitan_aggregate": 9702,
+        "proportion": 0.014538076664304091
+      },
+      {
+        "crime_head": "Cheating",
+        "cases_metropolitan_aggregate": 21429,
+        "proportion": 0.0321105385321967
+      },
+      {
+        "crime_head": "Forgery",
+        "cases_metropolitan_aggregate": 2518,
+        "proportion": 0.0037731268852522885
+      },
+      {
+        "crime_head": "Offences relating to Elections",
+        "cases_metropolitan_aggregate": 195,
+        "proportion": 0.0002922000566418571
+      },
+      {
+        "crime_head": "Disobedience to order duly promulgated by Public Servant",
+        "cases_metropolitan_aggregate": 34774,
+        "proportion": 0.05210751163930226
+      },
+      {
+        "crime_head": "Harbouring an Offender",
+        "cases_metropolitan_aggregate": 2,
+        "proportion": 2.996923657865201e-06
+      },
+      {
+        "crime_head": "Offences relating to Adulteration or Sale of Food/Drugs",
+        "cases_metropolitan_aggregate": 315,
+        "proportion": 0.00047201547611376923
+      },
+      {
+        "crime_head": "Rash Driving on Public Way",
+        "cases_metropolitan_aggregate": 31210,
+        "proportion": 0.04676699368098647
+      },
+      {
+        "crime_head": "Causing Hurt by Rash/Negligent Driving on Public Way",
+        "cases_metropolitan_aggregate": 14995,
+        "proportion": 0.022469435124844346
+      },
+      {
+        "crime_head": "Causing Grievous Hurt by Rash/Negligent Driving on Public",
+        "cases_metropolitan_aggregate": 15365,
+        "proportion": 0.02302386600154941
+      },
+      {
+        "crime_head": "Obstruction on Public way",
+        "cases_metropolitan_aggregate": 53742,
+        "proportion": 0.08053033561049583
+      },
+      {
+        "crime_head": "Sale of obscene Books/Objects",
+        "cases_metropolitan_aggregate": 38,
+        "proportion": 5.6941549499438826e-05
+      },
+      {
+        "crime_head": "Obscene Acts and Songs at Public Places",
+        "cases_metropolitan_aggregate": 1063,
+        "proportion": 0.0015928649241553545
+      },
+      {
+        "crime_head": "Offences relating to Religion",
+        "cases_metropolitan_aggregate": 136,
+        "proportion": 0.00020379080873483368
+      },
+      {
+        "crime_head": "Cheating by Impersonation",
+        "cases_metropolitan_aggregate": 70,
+        "proportion": 0.00010489232802528205
+      },
+      {
+        "crime_head": "Offences related to Mischief",
+        "cases_metropolitan_aggregate": 439,
+        "proportion": 0.0006578247429014117
+      },
+      {
+        "crime_head": "Arson",
+        "cases_metropolitan_aggregate": 416,
+        "proportion": 0.0006233601208359619
+      },
+      {
+        "crime_head": "Criminal Trespass",
+        "cases_metropolitan_aggregate": 2413,
+        "proportion": 0.0036157883932143656
+      },
+      {
+        "crime_head": "Cruelty by Husband or his Relatives",
+        "cases_metropolitan_aggregate": 15813,
+        "proportion": 0.023695176900911216
+      },
+      {
+        "crime_head": "Circulate False/Fake News/Rumours",
+        "cases_metropolitan_aggregate": 127,
+        "proportion": 0.0001903046522744403
+      },
+      {
+        "crime_head": "Criminal Intimidation",
+        "cases_metropolitan_aggregate": 10003,
+        "proportion": 0.014989113674812805
+      },
+      {
+        "crime_head": "Insult to the Modesty of Women",
+        "cases_metropolitan_aggregate": 1667,
+        "proportion": 0.002497935868830645
+      },
+      {
+        "crime_head": "Other IPC crimes",
+        "cases_metropolitan_aggregate": 24346,
+        "proportion": 0.036481551687193095
+      }
+    ],
+    "crimes_against_children": [
+      {
+        "crime_head": "Murder with Rape/POCSO",
+        "cases_metropolitan_aggregate": 7,
+        "proportion": 0.0003120402977755984
+      },
+      {
+        "crime_head": "Other Murder",
+        "cases_metropolitan_aggregate": 98,
+        "proportion": 0.004368564168858378
+      },
+      {
+        "crime_head": "Abetment of Suicide of Child",
+        "cases_metropolitan_aggregate": 21,
+        "proportion": 0.0009361208933267954
+      },
+      {
+        "crime_head": "Attempt to Commit Murder",
+        "cases_metropolitan_aggregate": 47,
+        "proportion": 0.002095127713636161
+      },
+      {
+        "crime_head": "Infanticide",
+        "cases_metropolitan_aggregate": 6,
+        "proportion": 0.0002674631123790844
+      },
+      {
+        "crime_head": "Foeticide",
+        "cases_metropolitan_aggregate": 3,
+        "proportion": 0.0001337315561895422
+      },
+      {
+        "crime_head": "Exposure and Abandonment",
+        "cases_metropolitan_aggregate": 108,
+        "proportion": 0.004814336022823519
+      },
+      {
+        "crime_head": "Simple Hurt",
+        "cases_metropolitan_aggregate": 341,
+        "proportion": 0.015200820220211296
+      },
+      {
+        "crime_head": "Grievous Hurt",
+        "cases_metropolitan_aggregate": 28,
+        "proportion": 0.0012481611911023937
+      },
+      {
+        "crime_head": "Missing Children Deemed as Kidnapped",
+        "cases_metropolitan_aggregate": 7584,
+        "proportion": 0.33807337404716264
+      },
+      {
+        "crime_head": "Other Kidnapping & Abduction",
+        "cases_metropolitan_aggregate": 4244,
+        "proportion": 0.18918557482280568
+      },
+      {
+        "crime_head": "Kidnapping and Abduction for the Purpose of Begging",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Kidnapping and Abduction in order to Murder",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Kidnapping for Ransom",
+        "cases_metropolitan_aggregate": 12,
+        "proportion": 0.0005349262247581688
+      },
+      {
+        "crime_head": "Kidnapping and Abduction of Minor Girls to compel her for marriage",
+        "cases_metropolitan_aggregate": 450,
+        "proportion": 0.02005973342843133
+      },
+      {
+        "crime_head": "Procuration of Minor Girls",
+        "cases_metropolitan_aggregate": 20,
+        "proportion": 0.0008915437079302813
+      },
+      {
+        "crime_head": "Importation of Girls from Foreign Country",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Other Kidnapping & Abducion",
+        "cases_metropolitan_aggregate": 235,
+        "proportion": 0.010475638568180805
+      },
+      {
+        "crime_head": "Human Trafficking",
+        "cases_metropolitan_aggregate": 109,
+        "proportion": 0.004858913208220033
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Rape",
+        "cases_metropolitan_aggregate": 2,
+        "proportion": 8.915437079302812e-05
+      },
+      {
+        "crime_head": "Attempt to Commit Rape",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 4.457718539651406e-05
+      },
+      {
+        "crime_head": "Assault on Women with Intent to Outrage her Modesty",
+        "cases_metropolitan_aggregate": 14,
+        "proportion": 0.0006240805955511968
+      },
+      {
+        "crime_head": "Insult to the Modesty of Women",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 4.457718539651406e-05
+      },
+      {
+        "crime_head": "Other IPC Crimes",
+        "cases_metropolitan_aggregate": 807,
+        "proportion": 0.03597378861498685
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 4321,
+        "proportion": 0.19261801809833728
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 49,
+        "proportion": 0.002184282084429189
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 2619,
+        "proportion": 0.11674764855347033
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 52,
+        "proportion": 0.0023180136406187315
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 264,
+        "proportion": 0.011768376944679713
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 11,
+        "proportion": 0.0004903490393616547
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 38,
+        "proportion": 0.0016939330450675345
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 2,
+        "proportion": 8.915437079302812e-05
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 15,
+        "proportion": 0.0006686577809477109
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 158,
+        "proportion": 0.007043195292649222
+      },
+      {
+        "crime_head": "Girls",
+        "cases_metropolitan_aggregate": 48,
+        "proportion": 0.002139704899032675
+      },
+      {
+        "crime_head": "Boys",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 4.457718539651406e-05
+      },
+      {
+        "crime_head": "Offences by Care Takers/In-charge of Juvenile Homes",
+        "cases_metropolitan_aggregate": 29,
+        "proportion": 0.0012927383764989079
+      },
+      {
+        "crime_head": "Other Offences",
+        "cases_metropolitan_aggregate": 342,
+        "proportion": 0.01524539740560781
+      },
+      {
+        "crime_head": "Procuring, inducing Children for the sake of prostitution",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 4.457718539651406e-05
+      },
+      {
+        "crime_head": "Detaining a person in premises where prostitution is carried on",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Others",
+        "cases_metropolitan_aggregate": 1,
+        "proportion": 4.457718539651406e-05
+      },
+      {
+        "crime_head": "Child Labour (Prohibition & Regulation) Act",
+        "cases_metropolitan_aggregate": 164,
+        "proportion": 0.007310658405028306
+      },
+      {
+        "crime_head": "Prohibition of Child Marriage Act",
+        "cases_metropolitan_aggregate": 19,
+        "proportion": 0.0008469665225337672
+      },
+      {
+        "crime_head": "Transplantation of Human Organs Act",
+        "cases_metropolitan_aggregate": 0,
+        "proportion": 0.0
+      },
+      {
+        "crime_head": "Publishing or Transmitting of material depicting children in sexually explicit act",
+        "cases_metropolitan_aggregate": 140,
+        "proportion": 0.006240805955511969
+      },
+      {
+        "crime_head": "Other Cyber Crimes against Children",
+        "cases_metropolitan_aggregate": 11,
+        "proportion": 0.0004903490393616547
+      },
+      {
+        "crime_head": "Other SLL crimes",
+        "cases_metropolitan_aggregate": 10,
+        "proportion": 0.00044577185396514065
+      }
+    ]
+  },
+  "bengaluru_demographics_and_outcomes": {
+    "sll_arrests_gender_distribution": {
+      "MALE": 0.9099601045535837,
+      "FEMALE": 0.08983353968909066,
+      "TRANSGENDER": 0.0002063557573256294
+    },
+    "sll_arrest_outcomes": {
+      "chargesheet_rate_relative_to_arrests": 1.197069748245976,
+      "conviction_rate": 0.7746180963572268,
+      "discharge_rate": 0.0005875440658049354,
+      "acquittal_rate": 0.22479435957696828
+    },
+    "juvenile_socioeconomics": {
+      "education_distribution": {
+        "ILLITERATE": 0.014519056261343012,
+        "UPTO_PRIMARY": 0.1724137931034483,
+        "ABOVE_PRIMARY_TO_MATRIC": 0.6533575317604355,
+        "ABOVE_MATRIC_TO_HIGH_SECONDARY": 0.14882032667876588,
+        "ABOVE_HIGHER_SECONDARY": 0.010889292196007259
+      },
+      "family_background_distribution": {
+        "LIVING_WITH_PARENTS": 0.9509981851179673,
+        "LIVING_WITH_GUARDIANS": 0.036297640653357534,
+        "HOMELESS": 0.012704174228675136
+      }
+    }
+  }
+}

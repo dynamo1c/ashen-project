@@ -1,0 +1,23 @@
+# Zoho Catalyst / Node / Python gitignore
+node_modules/
+.build/
+.env
+.env.*
+.gemini/
+*.log
+catalyst-debug.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
