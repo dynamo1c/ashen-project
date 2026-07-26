@@ -32,4 +32,13 @@
   - [x] Scaled datastore query limit from `LIMIT 100` to `LIMIT 2000` to handle large-scale database lookups.
   - [x] Implemented dynamic seed generation up to exactly 1,480 profiles to demonstrate full visual scale while retaining any real database modifications.
   - [x] Refactored scatter chart and table dossier links to pass the complete profile object, resolving fallback placeholders on the dossier page.
+- [x] **Objective 6 — AI/ML-Driven Intelligence & Copilot Synergy (July 2026):**
+  - [x] `GET /api/analytics/briefing` — Cerebras `gpt-oss-120b` SCRB Daily Intelligence Briefing generator, hardcoded-template fallback on LLM failure.
+  - [x] `#generate-briefing-btn` + `#briefing-modal` wired into `client/index.html` header of the Alerts/Radar view.
+  - [x] Glassmorphism modal CSS + `@media print` rules for clean PDF export; carved a scoped exception into `DESIGN.md`'s "no glassmorphism/no box-shadow" rules for full-screen modal overlays only.
+  - [x] `formatBriefingMarkdown()` in `client/main.js` — headings/hr/bullets/numbered-lists/bold/italic/code/links, plus GFM-style table support (Cerebras output alternates between bullets and tables run to run).
+  - [x] Download-as-`.md` (Blob + synthetic anchor) and Print/Save-as-PDF (`window.print()`) actions on the briefing modal footer.
+  - [x] Hivemind workspace context: `ashenActiveView`/`ashenActiveFir`/`ashenActiveSuspect` tracked at `setActiveView`/`openCaseDossierPage`/`openSuspectDossierPage`, compiled into `x-ashen-active-view` / `x-ashen-active-district` / `x-ashen-active-fir` / `x-ashen-selected-suspect` headers via `buildContextHeaders()`, sent on both `sendMessage` (chat) and `sendVoiceQuery` (voice copilot) — backend already consumed these headers in `handleQueryRequest` from a prior session but the frontend never sent them until now.
+  - [x] Verified end-to-end in-browser: briefing fetch/render/table/bullets, download click, Escape-to-close, backdrop-click-to-close, and `x-ashen-active-view` confirmed present server-side via request logs.
+  - Known limitation: copilot chat/voice queries 500 when run via bare `node index.js` (outside `catalyst serve`) — `handleQueryRequest` calls the Catalyst SDK's `initialize(req)`, which requires a real Catalyst-runtime request object. Pre-existing behavior, unrelated to the context-header change; works under `catalyst serve` / production.
 

@@ -47,6 +47,9 @@
           <a class="nav-item" data-section="syndicates" aria-label="Syndicates Dossier">
             <i class="ti ti-users"></i> Syndicates
           </a>
+          <a class="nav-item" data-section="watchlist" aria-label="Case Watchlist">
+            <i class="ti ti-bookmark"></i> Watchlist <span id="watchlist-count-badge" class="nav-count-badge" style="display:none;">0</span>
+          </a>
 
         </nav>
         <span class="sidebar-section-label">Filters</span>
@@ -94,12 +97,19 @@
         <div class="map-area" role="region" aria-label="GIS Hotspot Map">
           <div id="map"></div>
           <div class="map-overlay-label">KARNATAKA · LIVE HOTSPOT DENSITY</div>
+          <div class="map-load-status" id="map-load-status" style="display:none;" role="status" aria-live="polite"></div>
           <div class="map-controls">
             <button class="map-btn active" data-layer="stations" title="Toggle 185 Police Station Badges">🏰 Stations</button>
             <button class="map-btn active" data-layer="incidents" title="Toggle Crime Incident Scene Dots">📍 Incidents</button>
             <button class="map-btn" data-layer="heatmap" title="Toggle Density Heatmap">Heatmap</button>
             <button class="map-btn" data-layer="clusters" title="Toggle Clustered View">Clusters</button>
-            <button class="map-btn" data-layer="districts" title="Zoom to District Bounds">Districts</button>
+          </div>
+          <div class="timeline-bar" id="timeline-bar" style="display:none;">
+            <button id="timeline-play-btn" class="timeline-play-btn" title="Play crime-spread animation" aria-label="Play timeline animation">
+              <i class="ti ti-player-play"></i>
+            </button>
+            <input type="range" id="timeline-slider" class="timeline-slider" min="0" max="0" value="0" step="1" aria-label="Timeline month scrubber">
+            <span id="timeline-month-label" class="timeline-month-label">ALL TIME</span>
           </div>
         </div>
 
@@ -113,7 +123,10 @@
           <div class="panel risk-panel">
             <div class="panel-header">
               <span>District Risk Forecast</span>
-              <span class="panel-date" id="panel-date"></span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span class="panel-date" id="panel-date"></span>
+                <button class="btn-export-csv" id="export-risk-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
+              </span>
             </div>
             <div class="risk-table-wrap">
               <table class="data-table" id="risk-table">
@@ -263,8 +276,9 @@
                 <span class="gotham-status-pulse">● RADAR ONLINE</span>
                 <span class="gotham-header-title">KARNATAKA CRIME ANOMALY INTELLIGENCE MATRIX</span>
               </div>
-              <div class="gotham-header-meta">
+              <div class="gotham-header-meta" style="display:flex;align-items:center;gap:8px;">
                 <span class="gotham-meta-badge" id="anomaly-count-badge">05 ACTIVE ANOMALIES</span>
+                <button id="generate-briefing-btn" class="gotham-action-btn"><i class="ti ti-file-analytics"></i> GENERATE STRATEGIC BRIEFING</button>
               </div>
             </div>
             
@@ -312,8 +326,9 @@
                 <span class="gotham-status-pulse">● ANALYTICS ENGINE ONLINE</span>
                 <span class="gotham-header-title">KARNATAKA DEMOGRAPHIC & RECIDIVISM PROPENSITY MATRIX</span>
               </div>
-              <div class="gotham-header-meta">
+              <div class="gotham-header-meta" style="display:flex;align-items:center;gap:8px;">
                 <span class="gotham-meta-badge" id="recidivism-count-badge">65 PROFILES ANALYZED</span>
+                <button class="btn-export-csv" id="export-recidivism-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
               </div>
             </div>
 
@@ -400,13 +415,17 @@
 
           <!-- POLICE STATION CASES PANEL (LEVEL 2) -->
           <div class="panel station-cases-panel">
+            <div class="breadcrumb-trail" id="station-breadcrumb"></div>
             <div class="panel-header station-header-bar">
               <div class="station-title-group">
                 <i class="ti ti-building-community"></i>
                 <span id="sc-station-title">POLICE STATION CASES</span>
                 <span class="badge med" id="sc-district-tag">KARNATAKA</span>
               </div>
-              <button class="btn-back" id="btn-back-to-map">← BACK TO GIS MAP</button>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <button class="btn-export-csv" id="export-station-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
+                <button class="btn-back" id="btn-back-to-map">← BACK TO GIS MAP</button>
+              </div>
             </div>
             
             <div class="station-content-wrap">
@@ -474,12 +493,14 @@
 
           <!-- DEEP CASE DOSSIER PANEL (LEVEL 3) -->
           <div class="panel case-dossier-panel">
+            <div class="breadcrumb-trail" id="case-breadcrumb"></div>
             <div class="panel-header dossier-header-bar">
               <div class="dossier-title-group">
                 <i class="ti ti-file-certificate"></i>
                 <span>CASE DOSSIER · <span id="cd-fir-number">KA-BGU-2023-000002</span></span>
               </div>
               <div class="dossier-nav-btns">
+                <button class="btn-back" id="btn-pin-case"><i class="ti ti-bookmark"></i> PIN TO WATCHLIST</button>
                 <button class="btn-back" id="btn-back-to-station">← BACK TO STATION CASES</button>
                 <button class="btn-back" id="btn-dossier-to-map">← GIS MAP</button>
               </div>
@@ -555,6 +576,16 @@
                       </table>
                     </div>
                   </div>
+
+                  <!-- Investigator Notes Section -->
+                  <div class="dossier-card" id="case-notes-box" style="margin-top:12px;">
+                    <div class="dossier-card-header">INVESTIGATOR NOTES</div>
+                    <div class="case-notes-composer">
+                      <textarea id="case-note-input" placeholder="Add an observation, lead, or note for this case..." rows="2"></textarea>
+                      <button class="btn-back" id="btn-add-case-note"><i class="ti ti-plus"></i> ADD NOTE</button>
+                    </div>
+                    <div id="case-notes-list" class="case-notes-list"></div>
+                  </div>
                 </div>
 
                 <!-- Right Column: Embedded Criminal Network Graph -->
@@ -577,6 +608,7 @@
 
           <!-- DEDICATED FULLSCREEN OFFENDER DOSSIER PANEL (LEVEL 3) -->
           <div class="panel offender-dossier-panel">
+            <div class="breadcrumb-trail" id="offender-breadcrumb"></div>
             <div class="panel-header dossier-header-bar">
               <div class="dossier-title-group">
                 <i class="ti ti-user-exclamation"></i>
@@ -730,7 +762,10 @@
 
                   <!-- Member Ledger List Card -->
                   <div class="dossier-card" style="margin-top:12px;">
-                    <div class="dossier-card-header">SYNDICATE CELL MEMBERS LEDGER & WARRANTS</div>
+                    <div class="dossier-card-header" style="display:flex;align-items:center;justify-content:space-between;">
+                      <span>SYNDICATE CELL MEMBERS LEDGER & WARRANTS</span>
+                      <button class="btn-export-csv" id="export-syndicate-csv" title="Export table as CSV"><i class="ti ti-file-download"></i> CSV</button>
+                    </div>
                     <div class="suspect-cases-wrap" style="max-height:220px;overflow-y:auto;">
                       <table class="data-table syndicate-members-table" style="width:100%;font-size:9px;">
                         <thead>
@@ -764,6 +799,32 @@
                 </div>
 
               </div>
+            </div>
+          </div>
+
+          <!-- CASE WATCHLIST PANEL -->
+          <div class="panel watchlist-panel">
+            <div class="panel-header">
+              <span><i class="ti ti-bookmark"></i> Case Watchlist</span>
+              <span class="panel-date" id="watchlist-panel-count">0 PINNED CASES</span>
+            </div>
+            <div class="watchlist-content-wrap">
+              <div id="watchlist-empty-state" class="watchlist-empty-state" style="display:none;">
+                <i class="ti ti-bookmark-off" style="font-size:28px;color:var(--text-4);"></i>
+                <p>No cases pinned yet. Open a Case Dossier and click "PIN TO WATCHLIST" to save it here.</p>
+              </div>
+              <table class="data-table" id="watchlist-table" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>FIR Number</th>
+                    <th>Crime Type</th>
+                    <th>District / Station</th>
+                    <th>Pinned</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="watchlist-tbody"></tbody>
+              </table>
             </div>
           </div>
 
@@ -889,9 +950,46 @@
     </div>
   </div>
 
+  <!-- COMMAND PALETTE (Ctrl+K) -->
+  <div id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Command palette">
+    <div class="command-palette-card">
+      <div class="command-palette-input-row">
+        <i class="ti ti-search"></i>
+        <input type="text" id="command-palette-input" placeholder="Jump to a view, FIR, district, or offender..." autocomplete="off" aria-label="Command palette search">
+        <span class="command-palette-hint">ESC</span>
+      </div>
+      <div id="command-palette-results" class="command-palette-results"></div>
+    </div>
+  </div>
+
+  <!-- STRATEGIC BRIEFING MODAL -->
+  <div id="briefing-modal" class="briefing-modal-overlay" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Strategic briefing">
+    <div class="briefing-modal-card">
+      <div class="briefing-modal-header">
+        <div class="briefing-header-title">
+          <i class="ti ti-file-analytics"></i> STATE CRIME RECORD BUREAU · STRATEGIC BRIEFING
+        </div>
+        <button id="close-briefing-modal" class="briefing-close-btn" aria-label="Close briefing modal">✕</button>
+      </div>
+      <div id="briefing-modal-body" class="briefing-modal-body">
+        <div id="briefing-loading" class="briefing-loading-spinner" style="display: none;">
+          <div class="spinner"></div>
+          <span class="loading-text">COMPILING STATEWIDE INTELLIGENCE AND GENERATING BRIEFING...</span>
+        </div>
+        <div id="briefing-markdown-content" class="briefing-markdown-content"></div>
+      </div>
+      <div class="briefing-modal-footer">
+        <button id="download-briefing-md-btn" class="briefing-action-btn"><i class="ti ti-download"></i> DOWNLOAD (.MD)</button>
+        <button id="print-briefing-pdf-btn" class="briefing-action-btn"><i class="ti ti-printer"></i> PRINT / SAVE AS PDF</button>
+        <button id="close-briefing-btn" class="briefing-action-btn secondary">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="voiceSearch.js"></script>

@@ -216,6 +216,8 @@ On fetch failure: show `ERR` in the relevant cell. No alert() calls. No console.
 1. No accent color on UI chrome — only data states use color
 2. No box-shadow, no text-shadow, no glow, no glassmorphism
 3. No border-radius above 6px anywhere
+
+**Exception — full-screen modal overlays** (e.g. `#briefing-modal`): may use `backdrop-filter: blur()`, `box-shadow` on the modal card, and up to `8px` border-radius. Rationale: a full-viewport overlay dialog is not "UI chrome" in the Gotham grid sense — it's a distinct transient surface, and needs visual separation from the dashboard behind it. This exception is scoped to modal overlays only; dashboard cards/panels/badges/buttons remain flat per the rules above.
 4. No font other than IBM Plex Mono and IBM Plex Sans
 5. No animations except `transition: background 0.12s ease` on hover
 6. No placeholder lorem ipsum — use real field names and realistic KSP data

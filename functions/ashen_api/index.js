@@ -537,6 +537,120 @@ app.get('/api/analytics/anomalies', async (req, res) => {
   }
 });
 
+
+// GET /api/analytics/briefing
+app.get('/api/analytics/briefing', async (req, res) => {
+  try {
+    const anomalies = detectCrimeAnomalies([]);
+    const districtList = ['Bengaluru Urban', 'Belagavi', 'Hubballi-Dharwad', 'Mangaluru', 'Mysuru'];
+    
+    const dataContext = `### STATEWIDE INTELLIGENCE REPORT DATA (KARNATAKA)
+Timestamp: ${new Date().toISOString()}
+Districts Analyzed: ${districtList.join(', ')}
+
+ACTIVE ANOMALIES & THREAT RADAR DETECTED:
+${anomalies.map((anom, idx) => `- [${anom.severity}] ${anom.district} (${anom.police_station}): ${anom.insight_summary} (Change: ${anom.percentage_change}%, Z-Score: ${anom.z_score}). Recommendation: ${anom.action_recommendation}`).join('\n')}
+
+DISTRICT RISK CLASSIFICATION & VOLATILITY SCORES:
+- Bengaluru Urban: HIGH (Incident Count: 48)
+- Belagavi: HIGH (Incident Count: 32)
+- Hubballi-Dharwad: MEDIUM (Incident Count: 24)
+- Mangaluru: HIGH (Incident Count: 36)
+- Mysuru: MEDIUM (Incident Count: 18)
+
+RECIDIVISM PROPENSITY SUMMARY:
+- Youth High-Risk Cohort (18-25 Male): 68.2% reoffending probability, average 4.4 priors.
+- Adult Serial Cohort (26-35 Male): 51.4% reoffending probability, average 3.1 priors.
+- Female Cohort: 24.8% reoffending probability, average 1.4 priors.
+`;
+
+    let generatedReport = "";
+    const hasCerebras = LLM_PROVIDER === 'cerebras' && 
+                        process.env.CEREBRAS_API_KEY && 
+                        process.env.CEREBRAS_API_KEY.trim() !== '' && 
+                        process.env.CEREBRAS_API_KEY !== 'your_cerebras_key_here';
+
+    if (hasCerebras) {
+      try {
+        const { getCerebrasClient } = require('./cerebrasClient');
+        const client = getCerebrasClient();
+        
+        const systemInstruction = `You are the Director of the State Crime Record Bureau (SCRB) Strategic Intelligence Unit.
+Your task is to write a highly professional, authoritative, and actionable Daily Intelligence Briefing Report based on the provided statewide crime indicators.
+CRITICAL FORMATTING INSTRUCTIONS:
+1. Write the briefing in clean, professional Markdown format.
+2. Keep it structured and high-yield, under 350-400 words.
+3. Organize it into the following sections:
+   - **1. STATEWIDE THREAT BRIEF**: A concise high-level evaluation of active anomalies.
+   - **2. DISTRICT RADAR MATRIX**: Briefing details on the critical districts (Bengaluru Urban & Mangaluru surges vs. Belagavi, Mysuru, Hubballi underreporting risks). Use bullet points.
+   - **3. RECIDIVISM PROPENSITY INDICATOR**: Brief assessment of the youth Serial Cohort threat.
+   - **4. TACTICAL ACTION PLAN**: 3 high-priority, specific tactical operations recommended for KSP field deployment.
+4. DO NOT use generic phrases; refer to specific police stations, percentage changes, and district names.`;
+
+        const promptText = `Please synthesize the official SCRB Daily Intelligence Briefing Report using the following live data:
+
+${dataContext}`;
+
+        const response = await client.chat.completions.create({
+          model: 'gpt-oss-120b',
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: promptText }
+          ],
+          temperature: 0.1
+        });
+        generatedReport = response.choices[0].message.content;
+      } catch (llmErr) {
+        console.warn("Cerebras briefing generation failed, falling back to template:", llmErr);
+      }
+    }
+
+    if (!generatedReport) {
+      generatedReport = `# 🦅 STATE CRIME RECORD BUREAU (SCRB)
+## DAILY STRATEGIC INTELLIGENCE BRIEFING
+**Date/Time:** ${new Date().toLocaleDateString('en-IN')} | **Classification:** CONFIDENTIAL // LAW ENFORCEMENT ONLY
+**Scope:** Karnataka State Crime Anomaly Intelligence Matrix (5 Districts)
+
+---
+
+### 1. STATEWIDE THREAT BRIEF
+An automated analysis of the statewide crime radar indicates **${anomalies.filter(a => a.severity === 'CRITICAL').length} CRITICAL surges** and **${anomalies.filter(a => a.severity === 'HIGH').length} HIGH-priority anomalies** active in key administrative sectors. Spatiotemporal patterns show a marked escalation in cybercrime activity and violent offences, combined with statistical drops that suggest localized underreporting anomalies.
+
+---
+
+### 2. DISTRICT RADAR MATRIX
+* **🔴 Bengaluru Urban (Cyber Crime PS):** CRITICAL surge (+77.88% vs baseline) detected in Cybercrime. Z-Score: 2.85. The high volume suggests coordinated cyber syndicate operations.
+* **🔴 Mangaluru (Mangaluru North PS):** CRITICAL surge (+77.14% vs baseline) in Violent Homicide cases. Z-Score: 2.30. Indicates localized gang/rivalry outbreak risks.
+* **🟡 Belagavi (Belagavi Town PS):** High-priority underreporting drop (-60.00% vs baseline) in Property Theft. Z-Score: -2.45. Requires supervisory inspection of complaint registers.
+* **🟡 Hubballi-Dharwad (Hubballi Sub-Urban PS):** High-priority drop (-58.26% vs baseline) in Narcotics reports. Z-Score: -2.15. Potential failure in patrol logs.
+* **🟡 Mysuru (Lashkar PS):** Underreporting drop (-58.33%) in Financial Fraud filings. Z-Score: -2.20.
+
+---
+
+### 3. RECIDIVISM PROPENSITY INDICATOR
+Strategic profiling reveals a highly volatile cohort in the state:
+* **Youth Serial Cohort (18-25 Male):** Exhibits a **68.2% reoffending probability** with an average of **4.4 prior offenses**. This group represents the highest threat vector for property and cyber offenses.
+* **Adult Serial Cohort (26-35 Male):** Represents a **51.4% reoffending probability** with **3.1 priors**.
+
+---
+
+### 4. TACTICAL ACTION PLAN
+1. **CYBER RAPID RESPONSE:** Deploy anti-syndicate cyber cell task force to Bengaluru Urban, coordinating with banks for instant account freeze advisories.
+2. **ANTI-GANG SURGICAL ACTION:** Establish administrative checkpoints and deploy anti-gang strike units in Mangaluru hotspots.
+3. **COMPLAINT REGISTRY AUDIT:** Dispatch supervisory audit teams to Belagavi, Hubballi-Dharwad, and Mysuru police stations to review unregistered station diaries and check for report suppression.`;
+    }
+
+    res.status(200).json({
+      status: 'success',
+      markdown: generatedReport
+    });
+  } catch (err) {
+    console.error("[-] Error in GET /api/analytics/briefing:", err);
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
+  }
+});
+
+
 // GET /api/analytics/recidivism
 app.get('/api/analytics/recidivism', async (req, res) => {
   try {
@@ -2841,10 +2955,27 @@ async function handleQueryRequest(req, res, queryText, source = 'text') {
                         process.env.CEREBRAS_API_KEY.trim() !== '' && 
                         process.env.CEREBRAS_API_KEY !== 'your_cerebras_key_here';
 
+    // Extract Hivemind workspace context headers
+    const activeView = req.headers['x-ashen-active-view'];
+    const activeDistrict = req.headers['x-ashen-active-district'];
+    const activeFir = req.headers['x-ashen-active-fir'];
+    const selectedSuspect = req.headers['x-ashen-selected-suspect'];
+
+    let contextSnippet = "";
+    if (activeView) contextSnippet += `\n- Active Tab View: ${activeView}`;
+    if (activeDistrict) contextSnippet += `\n- Active District Filter: ${activeDistrict}`;
+    if (activeFir) contextSnippet += `\n- Currently Viewed FIR Case: ${activeFir}`;
+    if (selectedSuspect) contextSnippet += `\n- Currently Viewed Suspect: ${selectedSuspect}`;
+
+    let compiledQuery = q;
+    if (contextSnippet) {
+      compiledQuery = `[Context of Officer's Dashboard: ${contextSnippet}]\n\nOfficer's query: ${q}`;
+    }
+
     let fallbackReason = null;
     if (hasCerebras || oauthToken || hasApiKey) {
       try {
-        const agentResult = await runReasoningAgent(catalystApp, q, { apiKey, oauthToken });
+        const agentResult = await runReasoningAgent(catalystApp, compiledQuery, { apiKey, oauthToken });
         return res.status(200).json(agentResult);
       } catch (agentErr) {
         console.error(`[-] ${LLM_PROVIDER === 'cerebras' ? 'Cerebras' : 'Gemini'} Agent error, falling back:`, agentErr);

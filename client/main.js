@@ -25,6 +25,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const chatMessages = document.getElementById('chat-messages');
   const chatInput = document.getElementById('chat-input');
   const voiceMicBtn = document.getElementById('voice-mic-btn');
+  const generateBriefingBtn = document.getElementById('generate-briefing-btn');
+  const briefingModal = document.getElementById('briefing-modal');
+  const briefingLoading = document.getElementById('briefing-loading');
+  const briefingContent = document.getElementById('briefing-markdown-content');
+  const closeBriefingModalBtn = document.getElementById('close-briefing-modal');
+  const closeBriefingBtn = document.getElementById('close-briefing-btn');
+  const downloadBriefingMdBtn = document.getElementById('download-briefing-md-btn');
+  const printBriefingPdfBtn = document.getElementById('print-briefing-pdf-btn');
   const filterDistrict = document.getElementById('filter-district');
   const filterStation = document.getElementById('filter-station');
   const filterCrime = document.getElementById('filter-crime');
@@ -108,16 +116,99 @@ document.addEventListener('DOMContentLoaded', () => {
   updateClock();
   setInterval(updateClock, 1000);
 
+  // --- HIVEMIND WORKSPACE CONTEXT (fed to the copilot agent as x-ashen-* headers) ---
+  let ashenActiveView = 'dashboard';
+  let ashenActiveFir = '';
+  let ashenActiveSuspect = '';
+
+  // --- BREADCRUMB TRAIL (Map -> Station -> Case -> Offender drill-down path) ---
+  let breadcrumbTrail = [];
+
+  const renderBreadcrumb = () => {
+    const containers = document.querySelectorAll('.breadcrumb-trail');
+    if (!containers.length) return;
+    const html = breadcrumbTrail.map((crumb, idx) => {
+      const isLast = idx === breadcrumbTrail.length - 1;
+      if (isLast) {
+        return `<span class="breadcrumb-current">${crumb.label}</span>`;
+      }
+      return `<span class="breadcrumb-link" data-crumb-idx="${idx}" role="button" tabindex="0">${crumb.label}</span><span class="breadcrumb-sep">/</span>`;
+    }).join('');
+    containers.forEach(el => {
+      el.innerHTML = html;
+      el.querySelectorAll('.breadcrumb-link').forEach(link => {
+        const go = () => goToBreadcrumb(parseInt(link.getAttribute('data-crumb-idx'), 10));
+        link.addEventListener('click', go);
+        link.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); go(); }
+        });
+      });
+    });
+  };
+
+  const goToBreadcrumb = (idx) => {
+    const crumb = breadcrumbTrail[idx];
+    if (!crumb) return;
+    // Truncate to everything BEFORE this crumb so the target function's own
+    // append-vs-reset logic sees the correct remaining ancestor context.
+    breadcrumbTrail = breadcrumbTrail.slice(0, idx);
+    if (crumb.type === 'map') {
+      setActiveView('map');
+    } else if (crumb.type === 'station') {
+      openStationCasesPage(crumb.name, crumb.district);
+    } else if (crumb.type === 'case') {
+      openCaseDossierPage(crumb.fir);
+    }
+  };
+
+  // --- HASH ROUTER (deep-linkable views: back/forward + shareable/refreshable URLs) ---
+  // isRestoringFromHash guards against the restore path re-pushing the same hash it just read.
+  // suppressNextHashchange skips the redundant re-render that a push would otherwise trigger,
+  // since navigateTo is always called right after the real render already happened.
+  let isRestoringFromHash = false;
+  let suppressNextHashchange = false;
+  const TOP_LEVEL_SECTIONS = ['dashboard', 'map', 'network', 'alerts', 'recidivism', 'inject', 'syndicates', 'watchlist'];
+
+  const navigateTo = (path, replace = false) => {
+    if (isRestoringFromHash) return;
+    const newHash = '#' + path;
+    if (window.location.hash === newHash) return;
+    if (replace) {
+      history.replaceState(null, '', newHash);
+    } else {
+      suppressNextHashchange = true;
+      window.location.hash = newHash;
+    }
+  };
+
+  const activateNavItem = (section) => {
+    navItems.forEach(n => n.classList.remove('active'));
+    const match = document.querySelector(`.nav-item[data-section="${section}"]`);
+    if (match) match.classList.add('active');
+  };
+
   // --- CENTRAL VIEW MANAGEMENT (MUTUALLY EXCLUSIVE FULLSCREEN SCREENS) ---
   const ALL_VIEW_CLASSES = [
-    'view-dashboard', 'view-map', 'view-network', 'view-alerts', 
-    'view-inject', 'view-station-cases', 'view-recidivism', 
-    'view-case-dossier', 'view-offender-dossier', 'view-syndicates'
+    'view-dashboard', 'view-map', 'view-network', 'view-alerts',
+    'view-inject', 'view-station-cases', 'view-recidivism',
+    'view-case-dossier', 'view-offender-dossier', 'view-syndicates', 'view-watchlist'
   ];
 
-  const setActiveView = (viewName) => {
+  const setActiveView = (viewName, opts = {}) => {
+    const { updateUrl = true, skipDataLoad = false } = opts;
     const appBody = document.querySelector('.app-body');
     if (!appBody) return;
+
+    ashenActiveView = viewName;
+
+    if (TOP_LEVEL_SECTIONS.includes(viewName)) {
+      breadcrumbTrail = [];
+      renderBreadcrumb();
+    }
+
+    if (updateUrl && TOP_LEVEL_SECTIONS.includes(viewName)) {
+      navigateTo('/' + viewName);
+    }
 
     // Remove ALL view classes so views NEVER overlap or render side-by-side
     appBody.classList.remove(...ALL_VIEW_CLASSES);
@@ -132,10 +223,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (workbench) workbench.scrollTop = 0;
 
     // Trigger view-specific data refresh
-    if (viewName === 'recidivism') {
+    if (skipDataLoad) {
+      // caller (e.g. hash-restore) is handling the data load itself, to avoid a double-fetch race
+    } else if (viewName === 'recidivism') {
       loadRecidivismMatrix();
     } else if (viewName === 'syndicates') {
       loadSyndicatesList();
+    } else if (viewName === 'watchlist') {
+      renderWatchlistView();
     } else if (viewName === 'network') {
       setTimeout(() => {
         if (activeNetworkFir) traceNetwork(activeNetworkFir);
@@ -167,6 +262,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
   let crimeChartInstance = null;
+  let activeDonutCategory = null;
 
   // --- SECTION 3: ANALYTICS SUMMARY (HUD + Chart + Custom Legend) ---
   const loadAnalytics = async () => {
@@ -230,13 +326,71 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const colors = ['#4B5261', '#C64A4A', '#B8862A', '#3A8C5C', '#6B7280', '#2E3340'];
       const keys = Object.keys(categories);
+
+      // Cross-filter: clicking a donut segment or legend item filters the map + risk table
+      // by an approximate crime_head keyword for that macro-category (categories here are
+      // backend macro-labels; individual FIR crime_head strings don't share that exact vocabulary).
+      const DONUT_CATEGORY_FILTER_TERMS = {
+        'Theft': 'theft', 'Cybercrime': 'cyber', 'Narcotics': 'narcotic',
+        'Violent': 'violent', 'Financial': 'financial', 'Other': ''
+      };
+
+      const applyDonutCategoryFilter = (key) => {
+        const isTogglingOff = activeDonutCategory === key;
+        activeDonutCategory = isTogglingOff ? null : key;
+        const term = activeDonutCategory ? (DONUT_CATEGORY_FILTER_TERMS[activeDonutCategory] || '') : '';
+        if (filterCrime) filterCrime.value = term;
+        if (typeof filterTable === 'function') filterTable();
+        if (typeof renderFilteredHotspots === 'function') renderFilteredHotspots();
+        renderDonutFilterChip();
+        renderDonutLegendActiveState();
+      };
+
+      const renderDonutFilterChip = () => {
+        const chipEl = document.getElementById('donut-filter-chip');
+        if (!chipEl) return;
+        if (!activeDonutCategory) {
+          chipEl.style.display = 'none';
+          chipEl.innerHTML = '';
+          return;
+        }
+        chipEl.style.display = 'flex';
+        chipEl.innerHTML = `FILTERED BY: <strong>${activeDonutCategory.toUpperCase()}</strong> <span id="donut-filter-clear" title="Clear filter">✕</span>`;
+        const clearBtn = document.getElementById('donut-filter-clear');
+        if (clearBtn) clearBtn.addEventListener('click', () => applyDonutCategoryFilter(activeDonutCategory));
+      };
+
+      const renderDonutLegendActiveState = () => {
+        legendGrid.querySelectorAll('.donut-legend-item').forEach(item => {
+          item.classList.toggle('active', item.getAttribute('data-category') === activeDonutCategory);
+        });
+      };
+
       legendGrid.innerHTML = keys.map((key, i) => `
-        <div style="display:flex;align-items:center;gap:6px;">
+        <div class="donut-legend-item" data-category="${key}" role="button" tabindex="0" style="display:flex;align-items:center;gap:6px;cursor:pointer;">
           <span style="width:6px;height:6px;background:${colors[i]};display:inline-block;border-radius:1px;"></span>
           <span style="color:var(--text-2);">${key}</span>
           <span style="color:var(--text-4);margin-left:auto;padding-right:4px;">${categories[key].toLocaleString('en-IN')}</span>
         </div>
       `).join('');
+      legendGrid.querySelectorAll('.donut-legend-item').forEach(item => {
+        item.addEventListener('click', () => applyDonutCategoryFilter(item.getAttribute('data-category')));
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); applyDonutCategoryFilter(item.getAttribute('data-category')); }
+        });
+      });
+      renderDonutLegendActiveState();
+
+      let chipEl = document.getElementById('donut-filter-chip');
+      if (!chipEl) {
+        chipEl = document.createElement('div');
+        chipEl.id = 'donut-filter-chip';
+        chipEl.className = 'donut-filter-chip';
+        if (riskPanel && tableWrap) {
+          riskPanel.insertBefore(chipEl, tableWrap);
+        }
+      }
+      renderDonutFilterChip();
 
       if (crimeChartInstance) {
         crimeChartInstance.destroy();
@@ -255,6 +409,14 @@ document.addEventListener('DOMContentLoaded', () => {
           cutout: '76%',
           responsive: true,
           maintainAspectRatio: true,
+          onClick: (evt, elements) => {
+            if (elements.length > 0) {
+              applyDonutCategoryFilter(keys[elements[0].index]);
+            }
+          },
+          onHover: (evt, elements) => {
+            evt.native.target.style.cursor = elements.length > 0 ? 'pointer' : 'default';
+          },
           plugins: {
             legend: {
               display: false // Use custom legend grid instead of Chart.js default
@@ -292,7 +454,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const incidentsLayerGroup = L.layerGroup();
   const markersLayer = L.layerGroup();
   let clusterGroup;
+  let heatLayer = null;
   let activeMarkers = []; // Track loaded markers for real-time sidebar filtering
+
+  const getHeatPoints = () => activeMarkers.map(item => [item.data.latitude, item.data.longitude]);
+
+  // --- CRIME-SPREAD TIMELINE (month-by-month playback over the map) ---
+  let timelineMonths = [];
+  let activeTimelineCutoffMonth = null; // null = show full history (no cutoff)
+  let timelinePlayInterval = null;
+  const getIncidentMonth = (h) => (h.incident_timestamp || '').slice(0, 7); // "YYYY-MM"
 
   let isStationsLayerActive = true;
   let isIncidentsLayerActive = true;
@@ -455,6 +626,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (selectedDistInput && !h.district.toLowerCase().includes(selectedDistInput)) return false;
       if (selectedStationInput !== 'all' && h.police_station !== selectedStationInput) return false;
       if (selectedCrime && !h.crime_head.toLowerCase().includes(selectedCrime)) return false;
+      if (activeTimelineCutoffMonth && getIncidentMonth(h) > activeTimelineCutoffMonth) return false;
       return true;
     });
 
@@ -548,7 +720,108 @@ document.addEventListener('DOMContentLoaded', () => {
       stMarker.bindPopup(popupHtml);
       stationsLayerGroup.addLayer(stMarker);
     });
+
+    if (heatLayer) {
+      heatLayer.setLatLngs(getHeatPoints());
+    }
   };
+
+  const timelineBar = document.getElementById('timeline-bar');
+  const timelineSlider = document.getElementById('timeline-slider');
+  const timelineMonthLabel = document.getElementById('timeline-month-label');
+  const timelinePlayBtn = document.getElementById('timeline-play-btn');
+
+  const formatMonthLabel = (monthStr) => {
+    const [y, m] = monthStr.split('-');
+    const names = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    return `${names[parseInt(m, 10) - 1]} ${y}`;
+  };
+
+  const applyTimelineIndex = (idx) => {
+    if (!timelineMonths.length) return;
+    const clamped = Math.max(0, Math.min(idx, timelineMonths.length - 1));
+    if (clamped === timelineMonths.length - 1) {
+      // Rightmost position = full history, no cutoff
+      activeTimelineCutoffMonth = null;
+      if (timelineMonthLabel) timelineMonthLabel.textContent = 'ALL TIME';
+    } else {
+      activeTimelineCutoffMonth = timelineMonths[clamped];
+      if (timelineMonthLabel) timelineMonthLabel.textContent = `THROUGH ${formatMonthLabel(activeTimelineCutoffMonth)}`;
+    }
+    renderFilteredHotspots();
+  };
+
+  const stopTimelinePlayback = () => {
+    if (timelinePlayInterval) {
+      clearInterval(timelinePlayInterval);
+      timelinePlayInterval = null;
+    }
+    if (timelinePlayBtn) {
+      timelinePlayBtn.classList.remove('is-playing');
+      timelinePlayBtn.innerHTML = '<i class="ti ti-player-play"></i>';
+    }
+  };
+
+  const startTimelinePlayback = () => {
+    if (!timelineSlider || timelineMonths.length < 2) return;
+    if (parseInt(timelineSlider.value, 10) >= timelineMonths.length - 1) {
+      timelineSlider.value = 0;
+      applyTimelineIndex(0);
+    }
+    if (timelinePlayBtn) {
+      timelinePlayBtn.classList.add('is-playing');
+      timelinePlayBtn.innerHTML = '<i class="ti ti-player-pause"></i>';
+    }
+    timelinePlayInterval = setInterval(() => {
+      const next = parseInt(timelineSlider.value, 10) + 1;
+      timelineSlider.value = next;
+      applyTimelineIndex(next);
+      if (next >= timelineMonths.length - 1) {
+        stopTimelinePlayback();
+      }
+    }, 900);
+  };
+
+  const buildTimelineControls = () => {
+    if (!timelineBar || !timelineSlider) return;
+    stopTimelinePlayback();
+    const seen = new Set();
+    rawHotspots.forEach(h => {
+      const m = getIncidentMonth(h);
+      if (m && m.length === 7) seen.add(m);
+    });
+    timelineMonths = Array.from(seen).sort();
+
+    if (timelineMonths.length < 2) {
+      // Not enough distinct months to make an animation meaningful — hide the control
+      timelineBar.style.display = 'none';
+      activeTimelineCutoffMonth = null;
+      return;
+    }
+
+    timelineBar.style.display = 'flex';
+    timelineSlider.max = String(timelineMonths.length - 1);
+    timelineSlider.value = String(timelineMonths.length - 1);
+    activeTimelineCutoffMonth = null;
+    if (timelineMonthLabel) timelineMonthLabel.textContent = 'ALL TIME';
+  };
+
+  if (timelineSlider) {
+    timelineSlider.addEventListener('input', () => {
+      stopTimelinePlayback();
+      applyTimelineIndex(parseInt(timelineSlider.value, 10));
+    });
+  }
+
+  if (timelinePlayBtn) {
+    timelinePlayBtn.addEventListener('click', () => {
+      if (timelinePlayInterval) {
+        stopTimelinePlayback();
+      } else {
+        startTimelinePlayback();
+      }
+    });
+  }
 
   // Auto-refresh marker rendering on map zoom change
   if (mapEl) {
@@ -588,10 +861,16 @@ document.addEventListener('DOMContentLoaded', () => {
   const openStationCasesPage = (stationName, districtName) => {
     currentStationName = stationName;
     currentDistrictName = districtName;
+    navigateTo('/station/' + encodeURIComponent(districtName) + '/' + encodeURIComponent(stationName));
+    breadcrumbTrail = [
+      { type: 'map', label: 'GIS MAP' },
+      { type: 'station', label: stationName.toUpperCase(), name: stationName, district: districtName }
+    ];
+    renderBreadcrumb();
 
     const appBody = document.querySelector('.app-body');
     if (appBody) {
-      appBody.classList.remove('view-dashboard', 'view-map', 'view-network', 'view-alerts', 'view-inject', 'view-case-dossier');
+      appBody.classList.remove(...ALL_VIEW_CLASSES);
       appBody.classList.add('view-station-cases');
     }
 
@@ -717,7 +996,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // --- LEVEL 3: DEEP CASE DOSSIER PAGE LOGIC ---
   const openCaseDossierPage = async (firNumber) => {
-    setActiveView('case-dossier');
+    ashenActiveFir = firNumber;
+    setActiveView('case-dossier', { updateUrl: false });
+    navigateTo('/case/' + encodeURIComponent(firNumber));
+
+    const lastCrumb = breadcrumbTrail[breadcrumbTrail.length - 1];
+    const caseCrumb = { type: 'case', label: 'CASE ' + firNumber, fir: firNumber };
+    breadcrumbTrail = (lastCrumb && (lastCrumb.type === 'map' || lastCrumb.type === 'station'))
+      ? [...breadcrumbTrail, caseCrumb]
+      : [{ type: 'map', label: 'GIS MAP' }, caseCrumb];
+    renderBreadcrumb();
 
     const firTitleEl = document.getElementById('cd-fir-number');
     if (firTitleEl) firTitleEl.textContent = firNumber;
@@ -735,6 +1023,10 @@ document.addEventListener('DOMContentLoaded', () => {
         longitude: 77.5946
       };
     }
+
+    currentCaseDossierData = caseData;
+    updatePinButtonState();
+    renderCaseNotes(caseData.fir_number);
 
     // Populate Case Meta
     const firVal = document.getElementById('cd-fir-val');
@@ -852,6 +1144,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const sCrime = suspectData.crime_head || 'Violent Crime';
     const sDistrict = suspectData.district || 'Bengaluru Urban';
     const sPriors = suspectData.prior_offenses !== undefined ? suspectData.prior_offenses : 4;
+    navigateTo('/offender/' + encodeURIComponent(sId));
+
+    const lastCrumbForOffender = breadcrumbTrail[breadcrumbTrail.length - 1];
+    const offenderCrumb = { type: 'offender', label: 'OFFENDER ' + sName.toUpperCase(), id: sId };
+    breadcrumbTrail = (lastCrumbForOffender && ['map', 'station', 'case'].includes(lastCrumbForOffender.type))
+      ? [...breadcrumbTrail, offenderCrumb]
+      : [{ type: 'map', label: 'GIS MAP' }, offenderCrumb];
+    renderBreadcrumb();
+
+    ashenActiveSuspect = `${sName} [${sId}]`;
 
     const odIdEl = document.getElementById('od-offender-id');
     const odHeroNameEl = document.getElementById('od-hero-name');
@@ -927,7 +1229,7 @@ document.addEventListener('DOMContentLoaded', () => {
     );
 
     // Switch view to dedicated fullscreen offender dossier page
-    setActiveView('offender-dossier');
+    setActiveView('offender-dossier', { updateUrl: false });
   };
 
   const openSuspectDossierModal = (suspectData) => {
@@ -1119,8 +1421,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
+  const mapLoadStatusEl = document.getElementById('map-load-status');
+  const setMapLoadStatus = (mode, message, retryDistrict) => {
+    if (!mapLoadStatusEl) return;
+    mapLoadStatusEl.classList.remove('is-loading', 'is-error');
+    if (mode === 'idle') {
+      mapLoadStatusEl.style.display = 'none';
+      mapLoadStatusEl.textContent = '';
+      mapLoadStatusEl.onclick = null;
+      return;
+    }
+    mapLoadStatusEl.style.display = 'block';
+    mapLoadStatusEl.textContent = message;
+    mapLoadStatusEl.classList.add(mode === 'error' ? 'is-error' : 'is-loading');
+    mapLoadStatusEl.onclick = mode === 'error' ? () => loadHotspots(retryDistrict) : null;
+  };
+
   const loadHotspots = async (districtName = 'all') => {
     if (!map) return;
+    setMapLoadStatus('loading', 'LOADING HOTSPOT DATA...', districtName);
     try {
       const url = districtName === 'all'
         ? `${API_BASE}/server/ashen_api/api/map/hotspots?district=all`
@@ -1159,6 +1478,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Update station filter dropdown options
       updateStationDropdownOptions(districtName);
+
+      buildTimelineControls();
 
       // Render map markers based on active filters
       renderFilteredHotspots();
@@ -1205,13 +1526,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
 
+      setMapLoadStatus('idle');
     } catch (e) {
-      // Silent catch
+      console.error('[-] Error loading hotspots:', e);
+      setMapLoadStatus('error', 'HOTSPOT DATA LOAD FAILED — CLICK TO RETRY', districtName);
     }
   };
 
+  let initialHotspotsLoadPromise = null;
   if (mapEl) {
-    loadHotspots();
+    initialHotspotsLoadPromise = loadHotspots();
   }
 
   // Map Controls (Independent Layer Toggles & Mode Selection)
@@ -1237,17 +1561,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else if (layer === 'heatmap') {
         mapBtns.forEach(b => {
-          if (['heatmap', 'clusters', 'districts'].includes(b.getAttribute('data-layer'))) b.classList.remove('active');
+          if (['heatmap', 'clusters'].includes(b.getAttribute('data-layer'))) b.classList.remove('active');
         });
         btn.classList.add('active');
-        map.removeLayer(clusterGroup);
-        if (isIncidentsLayerActive) map.addLayer(incidentsLayerGroup);
-      } else if (layer === 'districts') {
+        if (map.hasLayer(clusterGroup)) map.removeLayer(clusterGroup);
+        if (!heatLayer) {
+          heatLayer = L.heatLayer(getHeatPoints(), { radius: 26, blur: 20, maxZoom: 13, minOpacity: 0.35 });
+        } else {
+          heatLayer.setLatLngs(getHeatPoints());
+        }
+        if (!map.hasLayer(heatLayer)) map.addLayer(heatLayer);
+      } else if (layer === 'clusters') {
         mapBtns.forEach(b => {
-          if (['heatmap', 'clusters', 'districts'].includes(b.getAttribute('data-layer'))) b.classList.remove('active');
+          if (['heatmap', 'clusters'].includes(b.getAttribute('data-layer'))) b.classList.remove('active');
         });
         btn.classList.add('active');
-        map.fitBounds([[11.5, 74.0], [18.5, 78.5]]);
+        if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
+        if (map.hasLayer(incidentsLayerGroup)) map.removeLayer(incidentsLayerGroup);
+        if (!map.hasLayer(clusterGroup)) map.addLayer(clusterGroup);
       }
     });
   });
@@ -1581,6 +1912,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (e) {
       console.warn('Network graph trace error:', e);
+      if (graphEl) {
+        graphEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;text-align:center;">
+          <span>NETWORK TRACE FAILED — unable to reach the graph engine for ${firNumber || 'this FIR'}.</span>
+          <button id="network-trace-retry-btn" style="background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
+        </div>`;
+        const retryBtn = document.getElementById('network-trace-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', () => traceNetwork(firNumber, hopDepth));
+      }
     }
   };
 
@@ -1808,6 +2147,655 @@ document.addEventListener('DOMContentLoaded', () => {
   loadRiskTable();
 
 
+  // Shared markdown/escaping helpers — used by both the chat panel and the
+  // strategic briefing modal, so they live in the outer DOMContentLoaded scope.
+  const escapeHtml = (text) => {
+    if (typeof text !== 'string') return String(text);
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  const formatMessageText = (text) => {
+    let html = escapeHtml(text);
+
+    // Convert [title](url) to clickable citation links
+    html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '<a href="$2" target="_blank" class="citation-link">$1</a>');
+
+    // Convert **bold**
+    html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+
+    // Convert *italic* or _italic_
+    html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+    // Convert `code`
+    html = html.replace(/`(.*?)`/g, '<code>$1</code>');
+
+    // Convert line breaks and bulleted/numbered lists to HTML structure
+    const paragraphs = html.split(/\r?\n\r?\n/);
+    html = paragraphs.map(p => {
+      const trimmed = p.trim();
+      if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.match(/^\d+\.\s/)) {
+        const lines = p.split(/\r?\n/);
+        const isOrdered = trimmed.match(/^\d+\.\s/);
+        const listItems = lines.map(line => {
+          const cleanLine = line.replace(/^[\*\-\d\.]+\s*/, '');
+          return `<li>${cleanLine}</li>`;
+        }).join('');
+        return isOrdered ? `<ol>${listItems}</ol>` : `<ul>${listItems}</ul>`;
+      }
+      return `<p>${p.replace(/\r?\n/g, '<br>')}</p>`;
+    }).join('');
+
+    return html;
+  };
+
+  // Compiles the officer's current dashboard focus into x-ashen-* headers so
+  // the copilot agent can ground its answer in whatever is on screen.
+  const buildContextHeaders = () => {
+    const headers = {};
+    if (ashenActiveView) headers['x-ashen-active-view'] = ashenActiveView;
+    if (currentDistrictName) headers['x-ashen-active-district'] = currentDistrictName;
+    if (ashenActiveFir) headers['x-ashen-active-fir'] = ashenActiveFir;
+    if (ashenActiveSuspect) headers['x-ashen-selected-suspect'] = ashenActiveSuspect;
+    return headers;
+  };
+
+
+  // --- SECTION 7A: STRATEGIC BRIEFING MODAL ---
+  let briefingMarkdownRaw = '';
+  let isBriefingLoading = false;
+
+  const formatBriefingMarkdown = (text) => {
+    if (!text) return '';
+    const escaped = escapeHtml(text);
+    const lines = escaped.split(/\r?\n/);
+
+    const applyInline = (s) => s
+      .replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '<a href="$2" target="_blank" class="citation-link">$1</a>')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.*?)\*/g, '<em>$1</em>')
+      .replace(/`(.*?)`/g, '<code>$1</code>');
+
+    const blocks = [];
+    let listBuffer = [];
+    let listType = null;
+    let paraBuffer = [];
+    let tableBuffer = [];
+
+    const splitTableRow = (line) => line.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+    const isTableSeparatorRow = (cells) => cells.every(c => /^:?-{1,}:?$/.test(c));
+
+    const flushParagraph = () => {
+      if (paraBuffer.length) {
+        blocks.push(`<p>${applyInline(paraBuffer.join(' '))}</p>`);
+        paraBuffer = [];
+      }
+    };
+    const flushList = () => {
+      if (listBuffer.length) {
+        const tag = listType === 'ol' ? 'ol' : 'ul';
+        blocks.push(`<${tag}>${listBuffer.map(li => `<li>${applyInline(li)}</li>`).join('')}</${tag}>`);
+        listBuffer = [];
+        listType = null;
+      }
+    };
+    const flushTable = () => {
+      if (!tableBuffer.length) return;
+      const rows = tableBuffer.map(splitTableRow);
+      let headerCells = null;
+      let bodyRows = rows;
+      if (rows.length > 1 && isTableSeparatorRow(rows[1])) {
+        headerCells = rows[0];
+        bodyRows = rows.slice(2);
+      }
+      let html = '<table class="briefing-table">';
+      if (headerCells) {
+        html += `<thead><tr>${headerCells.map(c => `<th>${applyInline(c)}</th>`).join('')}</tr></thead>`;
+      }
+      html += `<tbody>${bodyRows.map(r => `<tr>${r.map(c => `<td>${applyInline(c)}</td>`).join('')}</tr>`).join('')}</tbody>`;
+      html += '</table>';
+      blocks.push(html);
+      tableBuffer = [];
+    };
+    const closeOpenBlocks = () => { flushParagraph(); flushList(); flushTable(); };
+
+    lines.forEach(rawLine => {
+      const line = rawLine.trim();
+      if (line === '') {
+        closeOpenBlocks();
+        return;
+      }
+
+      const h3 = line.match(/^###\s+(.*)/);
+      const h2 = line.match(/^##\s+(.*)/);
+      const h1 = line.match(/^#\s+(.*)/);
+      const hr = line.match(/^-{3,}$/);
+      const bullet = line.match(/^[\*\-]\s+(.*)/);
+      const numbered = line.match(/^\d+\.\s+(.*)/);
+      const tableRow = line.match(/^\|(.+)\|$/);
+
+      if (hr) {
+        closeOpenBlocks();
+        blocks.push('<hr>');
+      } else if (h3) {
+        closeOpenBlocks();
+        blocks.push(`<h3>${applyInline(h3[1])}</h3>`);
+      } else if (h2) {
+        closeOpenBlocks();
+        blocks.push(`<h2>${applyInline(h2[1])}</h2>`);
+      } else if (h1) {
+        closeOpenBlocks();
+        blocks.push(`<h1>${applyInline(h1[1])}</h1>`);
+      } else if (tableRow) {
+        flushParagraph();
+        flushList();
+        tableBuffer.push(line);
+      } else if (bullet) {
+        flushParagraph();
+        flushTable();
+        if (listType && listType !== 'ul') flushList();
+        listType = 'ul';
+        listBuffer.push(bullet[1]);
+      } else if (numbered) {
+        flushParagraph();
+        flushTable();
+        if (listType && listType !== 'ol') flushList();
+        listType = 'ol';
+        listBuffer.push(numbered[1]);
+      } else {
+        flushList();
+        flushTable();
+        paraBuffer.push(line);
+      }
+    });
+    closeOpenBlocks();
+
+    return blocks.join('');
+  };
+
+  const closeBriefing = () => {
+    if (briefingModal) {
+      briefingModal.classList.remove('active');
+      briefingModal.setAttribute('aria-hidden', 'true');
+    }
+  };
+
+  const openBriefing = () => {
+    if (!briefingModal) return;
+    briefingModal.classList.add('active');
+    briefingModal.setAttribute('aria-hidden', 'false');
+
+    if (isBriefingLoading) return;
+    isBriefingLoading = true;
+
+    if (briefingLoading) briefingLoading.style.display = 'flex';
+    if (briefingContent) briefingContent.innerHTML = '';
+
+    fetch(`${API_BASE}/server/ashen_api/api/analytics/briefing`)
+      .then(res => {
+        if (!res.ok) throw new Error('Briefing request failed');
+        return res.json();
+      })
+      .then(data => {
+        briefingMarkdownRaw = (data && data.markdown) || '';
+        if (briefingContent) briefingContent.innerHTML = formatBriefingMarkdown(briefingMarkdownRaw);
+      })
+      .catch(err => {
+        briefingMarkdownRaw = '';
+        if (briefingContent) {
+          briefingContent.innerHTML = '<p style="color:#E66A6A;">[BRIEFING GENERATION FAILED — Unable to reach the intelligence synthesis engine. Please retry.]</p>';
+        }
+      })
+      .finally(() => {
+        isBriefingLoading = false;
+        if (briefingLoading) briefingLoading.style.display = 'none';
+      });
+  };
+
+  if (generateBriefingBtn) {
+    generateBriefingBtn.addEventListener('click', openBriefing);
+  }
+  if (closeBriefingModalBtn) closeBriefingModalBtn.addEventListener('click', closeBriefing);
+  if (closeBriefingBtn) closeBriefingBtn.addEventListener('click', closeBriefing);
+  if (briefingModal) {
+    briefingModal.addEventListener('click', (e) => {
+      if (e.target === briefingModal) closeBriefing();
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && briefingModal.classList.contains('active')) closeBriefing();
+    });
+  }
+  if (downloadBriefingMdBtn) {
+    downloadBriefingMdBtn.addEventListener('click', () => {
+      if (!briefingMarkdownRaw) return;
+      const blob = new Blob([briefingMarkdownRaw], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SCRB_Strategic_Briefing_${dateStr}.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  }
+  if (printBriefingPdfBtn) {
+    printBriefingPdfBtn.addEventListener('click', () => {
+      window.print();
+    });
+  }
+
+  // --- COMMAND PALETTE (Ctrl+K) ---
+  const KARNATAKA_DISTRICTS = ['Bengaluru Urban', 'Mysuru', 'Hubballi-Dharwad', 'Mangaluru', 'Belagavi'];
+  const VIEW_LABELS = {
+    dashboard: 'Dashboard', map: 'GIS Map', network: 'Network Graph', alerts: 'Alerts',
+    recidivism: 'Recidivism Matrix', inject: 'Inject FIR', syndicates: 'Syndicates Dossier'
+  };
+
+  const cpOverlay = document.getElementById('command-palette-overlay');
+  const cpInput = document.getElementById('command-palette-input');
+  const cpResultsEl = document.getElementById('command-palette-results');
+  let cpIndex = [];
+  let cpFiltered = [];
+  let cpSelectedIdx = 0;
+
+  const buildCommandPaletteIndex = () => {
+    const entries = [];
+    Object.keys(VIEW_LABELS).forEach(key => {
+      entries.push({ type: 'view', icon: 'ti-layout-dashboard', label: VIEW_LABELS[key], value: key });
+    });
+    KARNATAKA_DISTRICTS.forEach(d => {
+      entries.push({ type: 'district', icon: 'ti-map-pin', label: d, value: d });
+    });
+    const seenFirs = new Set();
+    rawHotspots.forEach(h => {
+      if (h.fir_number && !seenFirs.has(h.fir_number)) {
+        seenFirs.add(h.fir_number);
+        entries.push({ type: 'fir', icon: 'ti-file-certificate', label: h.fir_number, sublabel: `${h.crime_head} · ${h.district}`, value: h.fir_number });
+      }
+    });
+    const seenOffenders = new Set();
+    (recidivismProfiles || []).forEach(p => {
+      const id = p.offender_id;
+      if (id && !seenOffenders.has(id)) {
+        seenOffenders.add(id);
+        entries.push({ type: 'offender', icon: 'ti-user-exclamation', label: p.offender_name || id, sublabel: id, value: p });
+      }
+    });
+    return entries;
+  };
+
+  const cpTypeTag = { view: 'VIEW', district: 'DISTRICT', fir: 'FIR', offender: 'OFFENDER' };
+
+  const renderCommandPaletteResults = () => {
+    if (!cpResultsEl) return;
+    if (cpFiltered.length === 0) {
+      cpResultsEl.innerHTML = `<div class="cp-empty-state">No matches. Try a view name, FIR number, district, or offender.</div>`;
+      return;
+    }
+    cpResultsEl.innerHTML = cpFiltered.slice(0, 30).map((item, idx) => `
+      <div class="cp-result-item ${idx === cpSelectedIdx ? 'selected' : ''}" data-idx="${idx}">
+        <i class="ti ${item.icon} cp-result-icon"></i>
+        <span class="cp-result-label">${item.label}${item.sublabel ? ` <span style="color:var(--text-4);">— ${item.sublabel}</span>` : ''}</span>
+        <span class="cp-result-type">${cpTypeTag[item.type]}</span>
+      </div>
+    `).join('');
+    cpResultsEl.querySelectorAll('.cp-result-item').forEach(el => {
+      el.addEventListener('click', () => activateCommandPaletteItem(parseInt(el.getAttribute('data-idx'), 10)));
+      el.addEventListener('mouseenter', () => {
+        cpSelectedIdx = parseInt(el.getAttribute('data-idx'), 10);
+        renderCommandPaletteResults();
+      });
+    });
+  };
+
+  const filterCommandPalette = (query) => {
+    const q = query.trim().toLowerCase();
+    cpSelectedIdx = 0;
+    if (!q) {
+      cpFiltered = cpIndex.filter(e => e.type === 'view');
+    } else {
+      cpFiltered = cpIndex.filter(e =>
+        e.label.toLowerCase().includes(q) || (e.sublabel && e.sublabel.toLowerCase().includes(q))
+      );
+    }
+    renderCommandPaletteResults();
+  };
+
+  const activateCommandPaletteItem = (idx) => {
+    const item = cpFiltered[idx];
+    if (!item) return;
+    closeCommandPalette();
+    if (item.type === 'view') {
+      activateNavItem(item.value);
+      setActiveView(item.value);
+    } else if (item.type === 'district') {
+      activateNavItem('map');
+      setActiveView('map');
+      loadHotspots(item.value);
+    } else if (item.type === 'fir') {
+      openCaseDossierPage(item.value);
+    } else if (item.type === 'offender') {
+      openSuspectDossierPage({
+        id: item.value.offender_id,
+        label: item.value.offender_name,
+        name: item.value.offender_name,
+        age: item.value.age,
+        gender: item.value.gender,
+        base_risk_score: item.value.base_risk_score,
+        crime_head: item.value.crime_head,
+        district: item.value.district,
+        prior_offenses: item.value.prior_offenses
+      });
+    }
+  };
+
+  const openCommandPalette = () => {
+    if (!cpOverlay) return;
+    cpIndex = buildCommandPaletteIndex();
+    cpOverlay.classList.add('active');
+    cpOverlay.setAttribute('aria-hidden', 'false');
+    cpInput.value = '';
+    filterCommandPalette('');
+    setTimeout(() => cpInput.focus(), 0);
+  };
+
+  const closeCommandPalette = () => {
+    if (!cpOverlay) return;
+    cpOverlay.classList.remove('active');
+    cpOverlay.setAttribute('aria-hidden', 'true');
+  };
+
+  document.addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      if (cpOverlay && cpOverlay.classList.contains('active')) {
+        closeCommandPalette();
+      } else {
+        openCommandPalette();
+      }
+    }
+  });
+
+  if (cpOverlay) {
+    cpOverlay.addEventListener('click', (e) => {
+      if (e.target === cpOverlay) closeCommandPalette();
+    });
+  }
+
+  if (cpInput) {
+    cpInput.addEventListener('input', () => filterCommandPalette(cpInput.value));
+    cpInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeCommandPalette();
+      } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (cpFiltered.length > 0) {
+          cpSelectedIdx = (cpSelectedIdx + 1) % Math.min(cpFiltered.length, 30);
+          renderCommandPaletteResults();
+        }
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (cpFiltered.length > 0) {
+          cpSelectedIdx = (cpSelectedIdx - 1 + Math.min(cpFiltered.length, 30)) % Math.min(cpFiltered.length, 30);
+          renderCommandPaletteResults();
+        }
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        activateCommandPaletteItem(cpSelectedIdx);
+      }
+    });
+  }
+
+  // --- CASE WATCHLIST (localStorage-persisted, pinned from the Case Dossier page) ---
+  const WATCHLIST_STORAGE_KEY = 'ashen_case_watchlist';
+  let currentCaseDossierData = null;
+
+  const getWatchlist = () => {
+    try {
+      const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.warn('[-] Unable to read watchlist from localStorage:', e);
+      return [];
+    }
+  };
+
+  const saveWatchlist = (list) => {
+    try {
+      localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.warn('[-] Unable to save watchlist to localStorage:', e);
+    }
+  };
+
+  const isCasePinned = (firNumber) => getWatchlist().some(c => c.fir_number === firNumber);
+
+  const updateWatchlistBadge = () => {
+    const count = getWatchlist().length;
+    const badge = document.getElementById('watchlist-count-badge');
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  };
+
+  const updatePinButtonState = () => {
+    const pinBtn = document.getElementById('btn-pin-case');
+    if (!pinBtn || !currentCaseDossierData) return;
+    const pinned = isCasePinned(currentCaseDossierData.fir_number);
+    pinBtn.classList.toggle('pinned', pinned);
+    pinBtn.innerHTML = pinned
+      ? '<i class="ti ti-bookmark-off"></i> UNPIN FROM WATCHLIST'
+      : '<i class="ti ti-bookmark"></i> PIN TO WATCHLIST';
+  };
+
+  const toggleCasePin = () => {
+    if (!currentCaseDossierData) return;
+    const list = getWatchlist();
+    const fir = currentCaseDossierData.fir_number;
+    const idx = list.findIndex(c => c.fir_number === fir);
+    if (idx >= 0) {
+      list.splice(idx, 1);
+    } else {
+      list.unshift({
+        fir_number: fir,
+        crime_head: currentCaseDossierData.crime_head,
+        district: currentCaseDossierData.district,
+        police_station: currentCaseDossierData.police_station,
+        pinned_at: new Date().toISOString()
+      });
+    }
+    saveWatchlist(list);
+    updatePinButtonState();
+    updateWatchlistBadge();
+  };
+
+  const btnPinCase = document.getElementById('btn-pin-case');
+  if (btnPinCase) btnPinCase.addEventListener('click', toggleCasePin);
+
+  const renderWatchlistView = () => {
+    const list = getWatchlist();
+    const tbody = document.getElementById('watchlist-tbody');
+    const emptyState = document.getElementById('watchlist-empty-state');
+    const table = document.getElementById('watchlist-table');
+    const countEl = document.getElementById('watchlist-panel-count');
+    if (countEl) countEl.textContent = `${list.length} PINNED CASE${list.length === 1 ? '' : 'S'}`;
+
+    if (list.length === 0) {
+      if (emptyState) emptyState.style.display = 'flex';
+      if (table) table.style.display = 'none';
+      if (tbody) tbody.innerHTML = '';
+      return;
+    }
+    if (emptyState) emptyState.style.display = 'none';
+    if (table) table.style.display = '';
+    if (!tbody) return;
+
+    tbody.innerHTML = list.map(c => `
+      <tr>
+        <td><span class="td-primary">${c.fir_number}</span></td>
+        <td><span class="badge ${/murder|homicide|rape|pocso/i.test(c.crime_head || '') ? 'high' : 'low'}">${c.crime_head || '—'}</span></td>
+        <td><span class="td-sub">${c.district || '—'} / ${c.police_station || '—'}</span></td>
+        <td><span style="color:var(--text-4);font-size:9px;">${new Date(c.pinned_at).toLocaleDateString('en-IN')}</span></td>
+        <td style="display:flex;gap:6px;">
+          <button class="btn-recid-inspect btn-watchlist-view" data-fir="${c.fir_number}">VIEW →</button>
+          <button class="btn-recid-inspect btn-watchlist-unpin" data-fir="${c.fir_number}" style="color:#E66A6A;border-color:rgba(198,74,74,0.4);">UNPIN</button>
+        </td>
+      </tr>
+    `).join('');
+
+    tbody.querySelectorAll('.btn-watchlist-view').forEach(btn => {
+      btn.addEventListener('click', () => openCaseDossierPage(btn.getAttribute('data-fir')));
+    });
+    tbody.querySelectorAll('.btn-watchlist-unpin').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const fir = btn.getAttribute('data-fir');
+        saveWatchlist(getWatchlist().filter(c => c.fir_number !== fir));
+        updateWatchlistBadge();
+        renderWatchlistView();
+        if (currentCaseDossierData && currentCaseDossierData.fir_number === fir) updatePinButtonState();
+      });
+    });
+  };
+
+  updateWatchlistBadge();
+
+  // --- OFFICER ANNOTATIONS (localStorage-persisted notes, keyed by fir_number) ---
+  const CASE_NOTES_STORAGE_KEY = 'ashen_case_notes';
+
+  const getAllCaseNotes = () => {
+    try {
+      const raw = localStorage.getItem(CASE_NOTES_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.warn('[-] Unable to read case notes from localStorage:', e);
+      return {};
+    }
+  };
+
+  const saveAllCaseNotes = (obj) => {
+    try {
+      localStorage.setItem(CASE_NOTES_STORAGE_KEY, JSON.stringify(obj));
+    } catch (e) {
+      console.warn('[-] Unable to save case notes to localStorage:', e);
+    }
+  };
+
+  const getCaseNotes = (fir) => getAllCaseNotes()[fir] || [];
+
+  const addCaseNote = (fir, text) => {
+    const all = getAllCaseNotes();
+    if (!all[fir]) all[fir] = [];
+    all[fir].unshift({
+      id: `note-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      text,
+      created_at: new Date().toISOString()
+    });
+    saveAllCaseNotes(all);
+  };
+
+  const deleteCaseNote = (fir, noteId) => {
+    const all = getAllCaseNotes();
+    if (all[fir]) {
+      all[fir] = all[fir].filter(n => n.id !== noteId);
+      saveAllCaseNotes(all);
+    }
+  };
+
+  const renderCaseNotes = (fir) => {
+    const listEl = document.getElementById('case-notes-list');
+    if (!listEl) return;
+    const notes = getCaseNotes(fir);
+    if (notes.length === 0) {
+      listEl.innerHTML = '<div class="case-notes-empty">No notes yet for this case.</div>';
+      return;
+    }
+    listEl.innerHTML = notes.map(n => `
+      <div class="case-note-item">
+        <div class="case-note-meta">
+          <span>${new Date(n.created_at).toLocaleString('en-IN')}</span>
+          <span class="case-note-delete" data-note-id="${n.id}" title="Delete note">✕</span>
+        </div>
+        <div>${escapeHtml(n.text)}</div>
+      </div>
+    `).join('');
+    listEl.querySelectorAll('.case-note-delete').forEach(el => {
+      el.addEventListener('click', () => {
+        deleteCaseNote(fir, el.getAttribute('data-note-id'));
+        renderCaseNotes(fir);
+      });
+    });
+  };
+
+  const btnAddCaseNote = document.getElementById('btn-add-case-note');
+  const caseNoteInput = document.getElementById('case-note-input');
+  if (btnAddCaseNote && caseNoteInput) {
+    btnAddCaseNote.addEventListener('click', () => {
+      const text = caseNoteInput.value.trim();
+      if (!text || !currentCaseDossierData) return;
+      addCaseNote(currentCaseDossierData.fir_number, text);
+      caseNoteInput.value = '';
+      renderCaseNotes(currentCaseDossierData.fir_number);
+    });
+  }
+
+
+  // --- CSV EXPORT (reused across every data table in the app) ---
+  const csvEscape = (val) => {
+    const s = String(val ?? '').replace(/\s+/g, ' ').trim();
+    if (/[",\n]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  };
+
+  const exportTableToCSV = (tableEl, filenamePrefix) => {
+    if (!tableEl) return;
+    const headerCells = Array.from(tableEl.querySelectorAll('thead th'));
+    const skipIndices = new Set();
+    headerCells.forEach((th, idx) => {
+      if (/^actions?$/i.test(th.textContent.trim())) skipIndices.add(idx);
+    });
+    const headers = headerCells.filter((_, idx) => !skipIndices.has(idx)).map(th => th.textContent.trim());
+
+    const rows = Array.from(tableEl.querySelectorAll('tbody tr')).map(tr => {
+      const cells = Array.from(tr.children);
+      if (cells.length <= 1 && cells[0] && cells[0].hasAttribute('colspan')) return null; // empty/error/loading placeholder row
+      return cells.filter((_, idx) => !skipIndices.has(idx)).map(td => csvEscape(td.textContent));
+    }).filter(Boolean);
+
+    if (rows.length === 0) return;
+
+    const csvContent = [headers.map(csvEscape).join(','), ...rows.map(r => r.join(','))].join('\r\n');
+    const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${filenamePrefix}_${dateStr}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const wireExportButton = (btnId, tableEl, filenamePrefix) => {
+    const btn = document.getElementById(btnId);
+    if (btn) btn.addEventListener('click', () => exportTableToCSV(tableEl, filenamePrefix));
+  };
+
+  wireExportButton('export-risk-csv', document.getElementById('risk-table'), 'Ashen_District_Risk_Forecast');
+  wireExportButton('export-station-csv', document.querySelector('.station-case-table'), 'Ashen_Station_Cases');
+  wireExportButton('export-recidivism-csv', document.querySelector('.recidivism-ledger-table'), 'Ashen_Recidivism_Matrix');
+  wireExportButton('export-syndicate-csv', document.querySelector('.syndicate-members-table'), 'Ashen_Syndicate_Members');
+
+
   // --- SECTION 7: CHAT PANEL ---
   if (chatFab && chatPanel && chatClose && chatMessages && chatInput && voiceMicBtn) {
     chatFab.addEventListener('click', () => {
@@ -1820,50 +2808,6 @@ document.addEventListener('DOMContentLoaded', () => {
     chatClose.addEventListener('click', () => {
       chatPanel.classList.remove('open');
     });
-
-    const escapeHtml = (text) => {
-      if (typeof text !== 'string') return String(text);
-      return text
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    };
-
-    const formatMessageText = (text) => {
-      let html = escapeHtml(text);
-      
-      // Convert [title](url) to clickable citation links
-      html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, '<a href="$2" target="_blank" class="citation-link">$1</a>');
-      
-      // Convert **bold**
-      html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      
-      // Convert *italic* or _italic_
-      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-      
-      // Convert `code`
-      html = html.replace(/`(.*?)`/g, '<code>$1</code>');
-      
-      // Convert line breaks and bulleted/numbered lists to HTML structure
-      const paragraphs = html.split(/\r?\n\r?\n/);
-      html = paragraphs.map(p => {
-        const trimmed = p.trim();
-        if (trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.match(/^\d+\.\s/)) {
-          const lines = p.split(/\r?\n/);
-          const isOrdered = trimmed.match(/^\d+\.\s/);
-          const listItems = lines.map(line => {
-            const cleanLine = line.replace(/^[\*\-\d\.]+\s*/, '');
-            return `<li>${cleanLine}</li>`;
-          }).join('');
-          return isOrdered ? `<ol>${listItems}</ol>` : `<ul>${listItems}</ul>`;
-        }
-        return `<p>${p.replace(/\r?\n/g, '<br>')}</p>`;
-      }).join('');
-      
-      return html;
-    };
 
     const appendUserMessage = (text) => {
       const msg = document.createElement('div');
@@ -1950,7 +2894,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chatMessages.appendChild(typingEl);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      const headers = {};
+      const headers = Object.assign({}, buildContextHeaders());
       if (oauthToken) {
         headers['x-google-oauth-token'] = oauthToken;
       }
@@ -2235,9 +3179,7 @@ document.addEventListener('DOMContentLoaded', () => {
       chatMessages.appendChild(typingEl);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      const headers = {
-        'Content-Type': 'application/json'
-      };
+      const headers = Object.assign({ 'Content-Type': 'application/json' }, buildContextHeaders());
       if (oauthToken) {
         headers['x-google-oauth-token'] = oauthToken;
       }
@@ -2616,6 +3558,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const loadAnomalyRadar = async () => {
+    const loadingContainer = document.getElementById('anomaly-cards-container');
+    if (loadingContainer) {
+      loadingContainer.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">SCANNING FOR ANOMALIES...</div>`;
+    }
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/anomalies`);
       if (!response.ok) throw new Error('API Anomaly Fetch Error');
@@ -2641,6 +3587,15 @@ document.addEventListener('DOMContentLoaded', () => {
       renderAnomalyCards();
     } catch (err) {
       console.warn('[-] Error loading anomaly radar:', err);
+      const container = document.getElementById('anomaly-cards-container');
+      if (container) {
+        container.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:24px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+          ANOMALY RADAR UNAVAILABLE — unable to reach the analytics engine.
+          <button id="anomaly-retry-btn" style="display:block;margin:8px auto 0;background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
+        </div>`;
+        const retryBtn = document.getElementById('anomaly-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', loadAnomalyRadar);
+      }
     }
   };
 
@@ -2665,6 +3620,10 @@ document.addEventListener('DOMContentLoaded', () => {
   let recidivismScatterInstance = null;
 
   const loadRecidivismMatrix = async () => {
+    const loadingTbody = document.getElementById('recidivism-table-body');
+    if (loadingTbody) {
+      loadingTbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">LOADING RECIDIVISM PROFILES...</td></tr>`;
+    }
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/analytics/recidivism`);
       if (!response.ok) throw new Error('API Error');
@@ -2693,6 +3652,15 @@ document.addEventListener('DOMContentLoaded', () => {
       renderRecidivismView();
     } catch (err) {
       console.warn('[-] Error loading recidivism matrix:', err);
+      const tbody = document.getElementById('recidivism-table-body');
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:20px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+          RECIDIVISM ENGINE UNAVAILABLE — unable to reach the analytics engine.
+          <button id="recidivism-retry-btn" style="display:block;margin:8px auto 0;background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
+        </td></tr>`;
+        const retryBtn = document.getElementById('recidivism-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', loadRecidivismMatrix);
+      }
     }
   };
 
@@ -2976,6 +3944,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const selector = document.getElementById('syn-selector');
     if (!selector) return;
 
+    const loadingMembersTbody = document.getElementById('syn-members-tbody');
+    if (loadingMembersTbody) {
+      loadingMembersTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-3);font-family:'IBM Plex Mono',monospace;font-size:11px;">LOADING SYNDICATE INTELLIGENCE...</td></tr>`;
+    }
+
     try {
       const response = await fetch(`${API_BASE}/server/ashen_api/api/syndicates`);
       if (!response.ok) throw new Error('Failed to fetch syndicates');
@@ -2994,16 +3967,30 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       if (syndicates.length > 0) {
-        loadSyndicateDossier(syndicates[0].id);
+        await loadSyndicateDossier(syndicates[0].id, { replace: true });
       }
     } catch (err) {
       console.error('[-] Error loading syndicates list:', err);
+      selector.innerHTML = '<option value="">— UNABLE TO LOAD SYNDICATES —</option>';
+      const membersTbody = document.getElementById('syn-members-tbody');
+      if (membersTbody) {
+        membersTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+          SYNDICATES DOSSIER UNAVAILABLE — unable to reach the analytics engine.
+          <button id="syndicates-retry-btn" style="display:block;margin:8px auto 0;background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
+        </td></tr>`;
+        const retryBtn = document.getElementById('syndicates-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', loadSyndicatesList);
+      }
     }
   };
 
-  const loadSyndicateDossier = async (syndicateId) => {
+  const loadSyndicateDossier = async (syndicateId, opts = {}) => {
     currentSyndicateId = syndicateId;
-    
+    navigateTo('/syndicate/' + encodeURIComponent(syndicateId), !!opts.replace);
+
+    const selectorEl = document.getElementById('syn-selector');
+    if (selectorEl && selectorEl.value !== syndicateId) selectorEl.value = syndicateId;
+
     const dossierTitleId = document.getElementById('syn-dossier-id');
     const codeVal = document.getElementById('syn-code-val');
     const bossVal = document.getElementById('syn-boss-val');
@@ -3097,12 +4084,75 @@ document.addEventListener('DOMContentLoaded', () => {
 
     } catch (err) {
       console.error('[-] Error loading syndicate dossier details:', err);
+      const membersTbody = document.getElementById('syn-members-tbody');
+      if (membersTbody) {
+        membersTbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:20px;color:#E66A6A;font-family:'IBM Plex Mono',monospace;font-size:11px;">
+          UNABLE TO LOAD DOSSIER FOR ${syndicateId} — engine offline or query failed.
+          <button class="syndicate-dossier-retry-btn" style="display:block;margin:8px auto 0;background:transparent;border:1px solid rgba(198,74,74,0.5);color:#E66A6A;padding:4px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:10px;">RETRY</button>
+        </td></tr>`;
+        const retryBtn = membersTbody.querySelector('.syndicate-dossier-retry-btn');
+        if (retryBtn) retryBtn.addEventListener('click', () => loadSyndicateDossier(syndicateId));
+      }
     }
   };
 
   const renderSyndicateHierarchyGraph = (nodes, links) => {
     renderDossierNetworkGraph(nodes, links, 'syn-hierarchy-graph', 'syn-hierarchy-tooltip');
   };
+
+  // --- HASH ROUTER: restore view state from URL on load / back-forward / manual edit ---
+  const restoreFromHash = () => {
+    const raw = window.location.hash.replace(/^#\/?/, '');
+    const parts = raw.split('/').map(p => {
+      try { return decodeURIComponent(p); } catch (e) { return p; }
+    }).filter(p => p !== '');
+
+    isRestoringFromHash = true;
+    try {
+      if (parts.length === 0) {
+        activateNavItem('dashboard');
+        setActiveView('dashboard', { updateUrl: false });
+        return;
+      }
+
+      const [kind, ...rest] = parts;
+
+      if (kind === 'case' && rest[0]) {
+        activateNavItem('map');
+        openCaseDossierPage(rest[0]);
+      } else if (kind === 'offender' && rest[0]) {
+        activateNavItem('map');
+        openSuspectDossierPage({ id: rest[0], label: rest[0] });
+      } else if (kind === 'station' && rest[0] && rest[1]) {
+        activateNavItem('map');
+        openStationCasesPage(rest[1], rest[0]);
+      } else if (kind === 'syndicate' && rest[0]) {
+        activateNavItem('syndicates');
+        setActiveView('syndicates', { updateUrl: false, skipDataLoad: true });
+        loadSyndicatesList().then(() => loadSyndicateDossier(rest[0], { replace: true }));
+      } else if (TOP_LEVEL_SECTIONS.includes(kind)) {
+        activateNavItem(kind);
+        setActiveView(kind, { updateUrl: false });
+      } else {
+        // Unknown/stale hash — fall back to dashboard rather than a blank screen
+        activateNavItem('dashboard');
+        setActiveView('dashboard', { updateUrl: false });
+      }
+    } finally {
+      setTimeout(() => { isRestoringFromHash = false; }, 0);
+    }
+  };
+
+  window.addEventListener('hashchange', () => {
+    if (suppressNextHashchange) {
+      suppressNextHashchange = false;
+      return;
+    }
+    restoreFromHash();
+  });
+  // Wait for the initial hotspots fetch so a cold-loaded deep link (e.g. #/case/<fir>) has
+  // real data to look up instead of the placeholder fallback baked into openCaseDossierPage.
+  Promise.resolve(initialHotspotsLoadPromise).catch(() => {}).finally(restoreFromHash);
 });
 
 
